@@ -17,6 +17,8 @@ os.makedirs(DOSSIER_RESULTS, exist_ok=True)
 # ─── Fichiers de sortie ─────────────────────────────────────────
 DATASET_CSV      = os.path.join(DOSSIER_RESULTS, "dataset.csv")
 LIGANDS_JSON     = os.path.join(DOSSIER_RESULTS, "ligands.json")
+PDBBIND_INDEX   = "data/pdbbind_index.lst"
+PDBBIND_IDS_OUT = os.path.join(DOSSIER_RESULTS, "pdbbind_ids.txt")
 
 
 # ─── Protéines à analyser ───────────────────────────────────────
