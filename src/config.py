@@ -43,7 +43,7 @@ NUCLEOTIDES_NATURELS =  {
     'CTP', 'CDP', 'CMP',  # Cytidine
     'UTP', 'UDP', 'UMP',  # Uridine
     'NAD', 'FAD', 'FMN',  # Cofacteurs
-    'HEM', 'HEA',         # Hème
+    'HEM', 'HEA', 'APC'         # Hème
 }
 
 # ─── Types non-thérapeutiques (classification RCSB) ─────────────
@@ -117,3 +117,15 @@ AA_CHARGES = {
     'ASP', 'GLU',  # négatifs
     'LYS', 'ARG', 'HIS'  # positifs
 }
+
+# ─── Résidus chargés positivement ───────────────────────────────
+AA_POSITIFS = {'LYS', 'ARG', 'HIS'}
+
+# ─── Résidus chargés négativement ───────────────────────────────
+AA_NEGATIFS = {'ASP', 'GLU'}
+
+# ─── Résidus flexibles ──────────────────────────────────────────
+AA_FLEXIBLES = {'GLY', 'PRO'}
+
+# ─── Cystéine ───────────────────────────────────────────────────
+AA_CYSTEINE = {'CYS'}

@@ -1,6 +1,7 @@
 import json
 import csv
 import os
+import math
 import random
 import warnings
 from Bio.PDB import PDBParser
@@ -11,7 +12,9 @@ from config import (
     AA_DONNEURS_H, AA_ACCEPTEURS_H,
     AA_DONNEURS_H, AA_ACCEPTEURS_H,
     AA_POLAIRES, AA_CHARGES,
-    AA_PETITS, AA_GRANDS
+    AA_PETITS, AA_GRANDS,
+    AA_POSITIFS, AA_NEGATIFS,      
+    AA_FLEXIBLES, AA_CYSTEINE
 )
 from load_pdb import load_structure
 
@@ -87,7 +90,6 @@ def generer_fausse_cavite(residus_proteiques, residus_site, taille):
 
 def calculer_features_negatif(residus):
     """Calcule les 13 features d'une fausse cavité"""
-    import math
 
     if not residus:
         return None
@@ -104,6 +106,10 @@ def calculer_features_negatif(residus):
     nb_charges      = 0
     nb_petits       = 0
     nb_grands       = 0
+    nb_positifs  = 0
+    nb_negatifs  = 0
+    nb_flexibles = 0
+    nb_cysteine  = 0
 
     for res in residus:
         resname = res.get_resname()
@@ -124,6 +130,10 @@ def calculer_features_negatif(residus):
         if resname in AA_CHARGES      : nb_charges      += 1
         if resname in AA_PETITS       : nb_petits       += 1
         if resname in AA_GRANDS       : nb_grands       += 1
+        if resname in AA_POSITIFS  : nb_positifs  += 1
+        if resname in AA_NEGATIFS  : nb_negatifs  += 1
+        if resname in AA_FLEXIBLES : nb_flexibles += 1
+        if resname in AA_CYSTEINE  : nb_cysteine  += 1
 
     n = len(residus)
 
@@ -153,11 +163,18 @@ def calculer_features_negatif(residus):
         'ratio_petits'      : round(nb_petits   / n, 3),
         'ratio_grands'      : round(nb_grands   / n, 3),
         'diversite_aa'      : diversite_aa,
+        'ratio_positif'     : round(nb_positifs  / n, 3),
+        'ratio_negatif'     : round(nb_negatifs  / n, 3),
+        'ratio_flexible'    : round(nb_flexibles / n, 3),
+        'ratio_cysteine'    : round(nb_cysteine  / n, 3),
+        'hydro_max'         : round(max(hydro_values), 3),
+        'hydro_min'         : round(min(hydro_values), 3),
+        'charge_absolue'    : round(sum(abs(CHARGE.get(r.get_resname(), 0))
+                          for r in residus), 2),
         'composition'       : composition
     }
 
 def sauvegarder_negatif(pdb_id, features, numero):
-    """Ajoute un exemple négatif dans dataset.csv"""
     with open(DATASET_CSV, 'a', newline='', encoding='utf-8-sig') as f:
         writer = csv.writer(f, delimiter=';')
         writer.writerow([
@@ -177,6 +194,13 @@ def sauvegarder_negatif(pdb_id, features, numero):
             features['ratio_petits'],
             features['ratio_grands'],
             features['diversite_aa'],
+            features['ratio_positif'],
+            features['ratio_negatif'],
+            features['ratio_flexible'],
+            features['ratio_cysteine'],
+            features['hydro_max'],
+            features['hydro_min'],
+            features['charge_absolue'],
             0
         ])
 

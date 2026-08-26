@@ -11,6 +11,7 @@ from sklearn.metrics import (
 )
 from sklearn.preprocessing import LabelEncoder
 import pickle
+from xgboost import XGBClassifier
 
 from config import DATASET_CSV, DOSSIER_RESULTS
 
@@ -35,7 +36,11 @@ FEATURES = [
     'ratio_charge',
     'ratio_petits',
     'ratio_grands',
-    'diversite_aa'
+    'diversite_aa',
+    'ratio_positif', 'ratio_negatif',
+    'ratio_flexible', 'ratio_cysteine',
+    'hydro_max', 'hydro_min',
+    'charge_absolue'
 ]
 
 # ─── Fonctions ────────────────────────────────────────────────────
@@ -97,6 +102,28 @@ def entrainer_modele(X_train, y_train):
         random_state = 42,    # reproductibilité
         n_jobs       = -1,    # utilise tous les CPU
         class_weight = 'balanced'  # gère le déséquilibre +/-
+    )
+
+    model.fit(X_train, y_train)
+    print(f"  Modèle entraîné ✅")
+
+    return model
+
+def entrainer_xgboost(X_train, y_train):
+    """Entraîne le modèle XGBoost"""
+    print(f"\nEntraînement du modèle XGBoost...")
+
+    model = XGBClassifier(
+        n_estimators     = 300,
+        learning_rate    = 0.1,
+        max_depth        = 6,
+        subsample        = 0.8,
+        colsample_bytree = 0.8,
+        random_state     = 42,
+        n_jobs           = -1,
+        scale_pos_weight = 2.5,  # gère le déséquilibre
+        eval_metric      = 'auc',
+        verbosity        = 0
     )
 
     model.fit(X_train, y_train)
@@ -210,9 +237,9 @@ def tester_prediction(model):
 
 if __name__ == "__main__":
 
-    print(f"{'='*50}")
-    print(f"  STRUCTBIND — Entraînement du modèle IA")
-    print(f"{'='*50}")
+    print(f"{'='*60}")
+    print(f"  STRUCTBIND — Comparaison Random Forest vs XGBoost")
+    print(f"{'='*60}")
 
     # 1. Charger le dataset
     df = charger_dataset()
@@ -225,21 +252,45 @@ if __name__ == "__main__":
     # 3. Diviser train/test
     X_train, X_test, y_train, y_test = diviser_dataset(X, y)
 
-    # 4. Entraîner le modèle
-    model = entrainer_modele(X_train, y_train)
+    # 4. Random Forest
+    print(f"\n{'─'*60}")
+    print(f"  RANDOM FOREST")
+    print(f"{'─'*60}")
+    model_rf = entrainer_modele(X_train, y_train)
+    metrics_rf = evaluer_modele(
+        model_rf, X_train, X_test, y_train, y_test
+    )
+    afficher_importance_features(model_rf)
 
-    # 5. Évaluer
-    metrics = evaluer_modele(model, X_train, X_test, y_train, y_test)
+    # 5. XGBoost
+    print(f"\n{'─'*60}")
+    print(f"  XGBOOST")
+    print(f"{'─'*60}")
+    model_xgb = entrainer_xgboost(X_train, y_train)
+    metrics_xgb = evaluer_modele(
+        model_xgb, X_train, X_test, y_train, y_test
+    )
+    afficher_importance_features(model_xgb)
 
-    # 6. Importance des features
-    afficher_importance_features(model)
+    # 6. Comparaison finale
+    print(f"\n{'='*60}")
+    print(f"  COMPARAISON FINALE")
+    print(f"{'='*60}")
+    print(f"  {'Métrique':<20} {'Random Forest':>15} {'XGBoost':>15}")
+    print(f"  {'─'*50}")
+    print(f"  {'AUC-ROC':<20} {metrics_rf['auc_roc']:>15.3f} {metrics_xgb['auc_roc']:>15.3f}")
+    print(f"  {'Accuracy':<20} {metrics_rf['accuracy']:>15.3f} {metrics_xgb['accuracy']:>15.3f}")
+    print(f"  {'CV AUC':<20} {metrics_rf['cv_auc_mean']:>15.3f} {metrics_xgb['cv_auc_mean']:>15.3f}")
 
-    # 7. Sauvegarder
-    sauvegarder_modele(model, metrics)
+    # 7. Garder le meilleur modèle
+    if metrics_xgb['auc_roc'] > metrics_rf['auc_roc']:
+        print(f"\n  → XGBoost est meilleur ✅")
+        print(f"  → Gain AUC : +{metrics_xgb['auc_roc'] - metrics_rf['auc_roc']:.3f}")
+        sauvegarder_modele(model_xgb, metrics_xgb)
+    else:
+        print(f"\n  → Random Forest est meilleur ✅")
+        sauvegarder_modele(model_rf, metrics_rf)
 
-    # 8. Tester une prédiction
-    tester_prediction(model)
-
-    print(f"\n{'='*50}")
-    print(f"  Entraînement terminé ! 🧬")
-    print(f"{'='*50}")
+    # 8. Test de prédiction
+    meilleur_model = model_xgb if metrics_xgb['auc_roc'] > metrics_rf['auc_roc'] else model_rf
+    tester_prediction(meilleur_model)

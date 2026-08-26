@@ -12,7 +12,9 @@ from config import (
     AA_AROMATIQUES, AA_HYDROPHOBES,
     AA_DONNEURS_H, AA_ACCEPTEURS_H,
     AA_POLAIRES, AA_CHARGES,
-    AA_PETITS, AA_GRANDS              # ← importées depuis config
+    AA_PETITS, AA_GRANDS,
+    AA_POSITIFS, AA_NEGATIFS,   
+    AA_FLEXIBLES, AA_CYSTEINE             
 )
 from load_pdb import load_structure
 from extract_ligand import find_binding_site, get_residues
@@ -47,7 +49,12 @@ def initialiser_csv():
                 'ratio_donneurs_h', 'ratio_accepteurs_h',
                 'ratio_polaire', 'ratio_charge',
                 'ratio_petits', 'ratio_grands', 
-                'diversite_aa', 'label'
+                'diversite_aa',
+                'ratio_positif', 'ratio_negatif',
+                'ratio_flexible', 'ratio_cysteine',
+                'hydro_max', 'hydro_min',
+                'charge_absolue', 
+                'label'
             ])
         print(f"Dataset initialisé → {DATASET_CSV} ✅")
 
@@ -70,6 +77,13 @@ def sauvegarder_features(pdb_id, ligand, tag, features, label=1):
             features['ratio_petits'],          
             features['ratio_grands'],
             features['diversite_aa'],
+            features['ratio_positif'],
+            features['ratio_negatif'],
+            features['ratio_flexible'],
+            features['ratio_cysteine'],
+            features['hydro_max'],
+            features['hydro_min'],
+            features['charge_absolue'],
             label
             ])
 
@@ -77,6 +91,11 @@ def calculer_features(binding_residues):
     """Calcule 12 features biophysiques d'un site de liaison"""
     nb_petits = 0
     nb_grands  = 0
+    nb_positifs  = 0
+    nb_negatifs  = 0
+    nb_flexibles = 0
+    nb_cysteine  = 0
+    hydro_list   = []
 
     if not binding_residues:
         return None
@@ -111,6 +130,10 @@ def calculer_features(binding_residues):
         if resname in AA_CHARGES      : nb_charges      += 1
         if resname in AA_PETITS       : nb_petits       += 1
         if resname in AA_GRANDS       : nb_grands       += 1
+        if resname in AA_POSITIFS  : nb_positifs  += 1
+        if resname in AA_NEGATIFS  : nb_negatifs  += 1
+        if resname in AA_FLEXIBLES : nb_flexibles += 1
+        if resname in AA_CYSTEINE  : nb_cysteine  += 1
 
     n = len(binding_residues)
 
@@ -144,13 +167,19 @@ def calculer_features(binding_residues):
         'ratio_donneurs_h'  : round(nb_donneurs_h   / n, 3),
         'ratio_accepteurs_h': round(nb_accepteurs_h / n, 3),
 
-        # Nouvelles features
         'ratio_polaire'     : round(nb_polaires / n, 3),
         'ratio_charge'      : round(nb_charges  / n, 3),
 
         'ratio_petits'      : round(nb_petits / n, 3),
         'ratio_grands'      : round(nb_grands  / n, 3),
-
+        'ratio_positif'  : round(nb_positifs  / n, 3),
+        'ratio_negatif'  : round(nb_negatifs  / n, 3),
+        'ratio_flexible' : round(nb_flexibles / n, 3),
+        'ratio_cysteine' : round(nb_cysteine  / n, 3),
+        'hydro_max'      : round(max(hydro_values), 3),
+        'hydro_min'      : round(min(hydro_values), 3),
+        'charge_absolue' : round(sum(abs(CHARGE.get(r.get_resname(), 0))
+                   for r in binding_residues), 2),
         'diversite_aa'      : diversite_aa,
         'composition'       : composition
     }
