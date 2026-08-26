@@ -10,7 +10,8 @@ from config import (
     PROTEINES, RAYON_SITE_LIAISON,
     ATOMES_MIN_LIGAND, POIDS_MIN_LIGAND,
     NUCLEOTIDES_NATURELS, NON_DRUG_TYPES,
-    LIGANDS_JSON
+    LIGANDS_JSON, PDBBIND_IDS_OUT,
+    DOSSIER_PDB, SUCRES_NATURELS
 )
 from load_pdb import load_structure
 
@@ -26,9 +27,11 @@ def charger_resultats_existants():
     return {}
 
 def sauvegarder_resultats(resultats):
-    """Sauvegarde tous les résultats dans le fichier JSON"""
-    with open(LIGANDS_JSON, 'w') as f:
+    """Sauvegarde avec fichier temporaire pour éviter la corruption"""
+    fichier_temp = LIGANDS_JSON + ".tmp"
+    with open(fichier_temp, 'w') as f:
         json.dump(resultats, f, indent=2)
+    os.replace(fichier_temp, LIGANDS_JSON)
 
 def get_residues(structure, residue_type='protein'):
     """
@@ -119,6 +122,10 @@ def classifier_ligand(resname, n_atoms, info, props):
     # Nucléotides naturels
     if resname in NUCLEOTIDES_NATURELS:
         return "Nucléotide naturel (cofacteur)", "non_drug", False
+
+    # Sucres naturels
+    if resname in SUCRES_NATURELS:
+        return "Sucre naturel", "non_drug", False
 
     # Trop petit
     if n_atoms < ATOMES_MIN_LIGAND or mw < POIDS_MIN_LIGAND:
@@ -250,14 +257,32 @@ if __name__ == "__main__":
     resultats    = charger_resultats_existants()
     deja_traites = set(resultats.keys())
 
-    print(f"Protéines déjà traitées : {len(deja_traites)}")
-    print(f"Protéines à traiter     : "
-          f"{len([p for p in PROTEINES if p not in deja_traites])}")
+    # Lire tous les PDB IDs depuis pdbbind_ids.txt
+    # au lieu de la liste manuelle config.py
+    if os.path.exists(PDBBIND_IDS_OUT):
+        proteines = []
+        with open(PDBBIND_IDS_OUT, 'r') as f:
+            for ligne in f:
+                ligne = ligne.strip()
+                if not ligne or ligne.startswith('#'):
+                    continue
+                pdb_id = ligne.split(';')[0].upper()
+                # Vérifier que le fichier .pdb existe
+                if os.path.exists(f"{DOSSIER_PDB}/{pdb_id}.pdb"):
+                    proteines.append(pdb_id)
+        print(f"Structures disponibles : {len(proteines)}")
+    else:
+        # Fallback → config.py
+        print("pdbbind_ids.txt introuvable → utilisation de config.py")
+        proteines = PROTEINES
 
-    for pdb_id in PROTEINES:
+    print(f"Déjà traitées          : {len(deja_traites)}")
+    print(f"A traiter              : {len([p for p in proteines if p not in deja_traites])}")
+
+    for pdb_id in proteines:
 
         if pdb_id in deja_traites:
-            print(f"\n[{pdb_id}] Déjà traité ✅ — ignoré")
+
             continue
 
         print(f"\n{'='*60}")
@@ -266,7 +291,7 @@ if __name__ == "__main__":
 
         structure = load_structure(pdb_id)
         if not structure:
-            print(f"  Structure introuvable → lancez load_pdb.py d'abord")
+        
             continue
 
         ligands_valides   = traiter_proteine(pdb_id, structure)

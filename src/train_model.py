@@ -30,7 +30,12 @@ FEATURES = [
     'ratio_aromatique',
     'ratio_hydrophobe',
     'ratio_donneurs_h',
-    'ratio_accepteurs_h'
+    'ratio_accepteurs_h',
+    'ratio_polaire',
+    'ratio_charge',
+    'ratio_petits',
+    'ratio_grands',
+    'diversite_aa'
 ]
 
 # ─── Fonctions ────────────────────────────────────────────────────
@@ -200,7 +205,7 @@ def tester_prediction(model):
     print(f"\n{'─'*60}")
     print(f"  Résultat : {corrects}/{total} ({corrects/total*100:.0f}%)")
     print(f"{'='*60}")
-    
+
 # ─── Point d'entrée ───────────────────────────────────────────────
 
 if __name__ == "__main__":

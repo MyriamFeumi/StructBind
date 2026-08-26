@@ -62,6 +62,19 @@ NON_DRUG_TYPES = {
     'd-saccharide',                   # Sucres configuration D
 }
 
+# ─── Sucres naturels à exclure ───────────────────────────────────
+SUCRES_NATURELS = {
+    'GAL', 'GLA', 'BGC', 'GLC',  # Galactose / Glucose
+    'MAN', 'FUC', 'SIA', 'NAG',  # Mannose, Fucose, Acide sialique
+    'NGA', 'BMA', 'AFL', 'LAT',  # autres sucres courants
+    'SUC', 'TRE', 'MAL', 'CEL',  # disaccharides
+    'FRU', 'RIB', 'XYL', 'LYX',  # autres monosaccharides
+}
+
+# ─── Taille des acides aminés ────────────────────────────────────
+AA_PETITS = {'GLY', 'ALA', 'SER'}
+AA_GRANDS  = {'TRP', 'TYR', 'PHE', 'ARG', 'LYS'}
+
 # ─── Échelles biophysiques ───────────────────────────────────────
 # Échelle de Kyte & Doolittle (1982)
 HYDROPHOBICITE = {
@@ -92,3 +105,15 @@ AA_DONNEURS_H   = {'SER', 'THR', 'TYR', 'TRP',
 
 AA_ACCEPTEURS_H = {'ASP', 'GLU', 'SER', 'THR', 
                    'ASN', 'GLN', 'HIS'}
+
+# ─── Acides aminés polaires ──────────────────────────────────────
+AA_POLAIRES = {
+    'SER', 'THR', 'ASN', 'GLN',
+    'TYR', 'CYS', 'HIS'
+}
+
+# ─── Acides aminés chargés ───────────────────────────────────────
+AA_CHARGES = {
+    'ASP', 'GLU',  # négatifs
+    'LYS', 'ARG', 'HIS'  # positifs
+}

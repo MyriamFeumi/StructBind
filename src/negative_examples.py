@@ -8,7 +8,10 @@ from Bio.PDB import PDBParser
 from config import (
     PROTEINES, LIGANDS_JSON, DATASET_CSV,
     DOSSIER_PDB, HYDROPHOBICITE, CHARGE, AA_AROMATIQUES, AA_HYDROPHOBES,
-    AA_DONNEURS_H, AA_ACCEPTEURS_H 
+    AA_DONNEURS_H, AA_ACCEPTEURS_H,
+    AA_DONNEURS_H, AA_ACCEPTEURS_H,
+    AA_POLAIRES, AA_CHARGES,
+    AA_PETITS, AA_GRANDS
 )
 from load_pdb import load_structure
 
@@ -83,11 +86,8 @@ def generer_fausse_cavite(residus_proteiques, residus_site, taille):
     return residus_hors_site[start:start + taille]
 
 def calculer_features_negatif(residus):
-    """Calcule les 8 features d'une fausse cavité"""
-    from config import (
-        AA_AROMATIQUES, AA_HYDROPHOBES,
-        AA_DONNEURS_H, AA_ACCEPTEURS_H
-    )
+    """Calcule les 13 features d'une fausse cavité"""
+    import math
 
     if not residus:
         return None
@@ -100,6 +100,10 @@ def calculer_features_negatif(residus):
     nb_hydrophobes  = 0
     nb_donneurs_h   = 0
     nb_accepteurs_h = 0
+    nb_polaires     = 0
+    nb_charges      = 0
+    nb_petits       = 0
+    nb_grands       = 0
 
     for res in residus:
         resname = res.get_resname()
@@ -116,18 +120,39 @@ def calculer_features_negatif(residus):
         if resname in AA_HYDROPHOBES  : nb_hydrophobes  += 1
         if resname in AA_DONNEURS_H   : nb_donneurs_h   += 1
         if resname in AA_ACCEPTEURS_H : nb_accepteurs_h += 1
+        if resname in AA_POLAIRES     : nb_polaires     += 1
+        if resname in AA_CHARGES      : nb_charges      += 1
+        if resname in AA_PETITS       : nb_petits       += 1
+        if resname in AA_GRANDS       : nb_grands       += 1
 
     n = len(residus)
+
+    bfactor_moy = sum(b_factors) / len(b_factors)
+
+    # Diversité des acides aminés
+    total_residus = sum(composition.values())
+    entropie = 0
+    for count in composition.values():
+        p = count / total_residus
+        if p > 0:
+            entropie -= p * math.log2(p)
+    max_entropie = math.log2(20)
+    diversite_aa = round(entropie / max_entropie, 3)
 
     return {
         'taille'            : n,
         'hydrophobicite_moy': round(sum(hydro_values) / n, 3),
         'charge_nette'      : round(charge_totale, 2),
-        'bfactor_moy'       : round(sum(b_factors) / len(b_factors), 2),
+        'bfactor_moy'       : round(bfactor_moy, 2),
         'ratio_aromatique'  : round(nb_aromatiques  / n, 3),
         'ratio_hydrophobe'  : round(nb_hydrophobes  / n, 3),
         'ratio_donneurs_h'  : round(nb_donneurs_h   / n, 3),
         'ratio_accepteurs_h': round(nb_accepteurs_h / n, 3),
+        'ratio_polaire'     : round(nb_polaires / n, 3),
+        'ratio_charge'      : round(nb_charges  / n, 3),
+        'ratio_petits'      : round(nb_petits   / n, 3),
+        'ratio_grands'      : round(nb_grands   / n, 3),
+        'diversite_aa'      : diversite_aa,
         'composition'       : composition
     }
 
@@ -147,6 +172,11 @@ def sauvegarder_negatif(pdb_id, features, numero):
             features['ratio_hydrophobe'],
             features['ratio_donneurs_h'],
             features['ratio_accepteurs_h'],
+            features['ratio_polaire'],
+            features['ratio_charge'],
+            features['ratio_petits'],
+            features['ratio_grands'],
+            features['diversite_aa'],
             0
         ])
 

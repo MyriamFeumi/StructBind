@@ -1,5 +1,6 @@
 import csv
 import json
+import math
 import os
 import warnings
 from Bio.PDB import PDBParser
@@ -7,8 +8,11 @@ from Bio.PDB import PDBParser
 from config import (
     PROTEINES, DATASET_CSV, LIGANDS_JSON,
     DOSSIER_PDB, RAYON_SITE_LIAISON,
-    HYDROPHOBICITE, CHARGE, AA_AROMATIQUES, AA_HYDROPHOBES,
-    AA_DONNEURS_H, AA_ACCEPTEURS_H          # ← importées depuis config
+    HYDROPHOBICITE, CHARGE, 
+    AA_AROMATIQUES, AA_HYDROPHOBES,
+    AA_DONNEURS_H, AA_ACCEPTEURS_H,
+    AA_POLAIRES, AA_CHARGES,
+    AA_PETITS, AA_GRANDS              # ← importées depuis config
 )
 from load_pdb import load_structure
 from extract_ligand import find_binding_site, get_residues
@@ -31,7 +35,7 @@ def charger_ligands_traites():
     return deja_traites
 
 def initialiser_csv():
-    """Crée le fichier CSV avec en-têtes si inexistant"""
+
     if not os.path.exists(DATASET_CSV):
         with open(DATASET_CSV, 'w', newline='', encoding='utf-8-sig') as f:
             writer = csv.writer(f, delimiter=';')
@@ -41,7 +45,9 @@ def initialiser_csv():
                 'charge_nette', 'bfactor',
                 'ratio_aromatique', 'ratio_hydrophobe',
                 'ratio_donneurs_h', 'ratio_accepteurs_h',
-                'label'
+                'ratio_polaire', 'ratio_charge',
+                'ratio_petits', 'ratio_grands', 
+                'diversite_aa', 'label'
             ])
         print(f"Dataset initialisé → {DATASET_CSV} ✅")
 
@@ -59,11 +65,19 @@ def sauvegarder_features(pdb_id, ligand, tag, features, label=1):
             features['ratio_hydrophobe'],
             features['ratio_donneurs_h'],
             features['ratio_accepteurs_h'],
+            features['ratio_polaire'],
+            features['ratio_charge'],
+            features['ratio_petits'],          
+            features['ratio_grands'],
+            features['diversite_aa'],
             label
             ])
 
 def calculer_features(binding_residues):
-    """Calcule 8 features biophysiques d'un site de liaison"""
+    """Calcule 12 features biophysiques d'un site de liaison"""
+    nb_petits = 0
+    nb_grands  = 0
+
     if not binding_residues:
         return None
 
@@ -75,6 +89,8 @@ def calculer_features(binding_residues):
     nb_hydrophobes  = 0
     nb_donneurs_h   = 0
     nb_accepteurs_h = 0
+    nb_polaires     = 0
+    nb_charges      = 0
 
     for res in binding_residues:
         resname = res.get_resname()
@@ -91,20 +107,54 @@ def calculer_features(binding_residues):
         if resname in AA_HYDROPHOBES  : nb_hydrophobes  += 1
         if resname in AA_DONNEURS_H   : nb_donneurs_h   += 1
         if resname in AA_ACCEPTEURS_H : nb_accepteurs_h += 1
+        if resname in AA_POLAIRES     : nb_polaires     += 1
+        if resname in AA_CHARGES      : nb_charges      += 1
+        if resname in AA_PETITS       : nb_petits       += 1
+        if resname in AA_GRANDS       : nb_grands       += 1
 
     n = len(binding_residues)
 
+    # Calcul de l'écart-type des B-factors
+    bfactor_moy = sum(b_factors) / len(b_factors)
+    bfactor_std = round(
+        (sum((b - bfactor_moy)**2 for b in b_factors)
+         / len(b_factors)) ** 0.5, 2
+    )
+
+    # Calcul de la diversité des acides aminés
+    # Entropie de Shannon normalisée
+    total_residus = sum(composition.values())
+    entropie = 0
+    for count in composition.values():
+        p = count / total_residus
+        if p > 0:
+            entropie -= p * math.log2(p)
+    # Normaliser entre 0 et 1
+    max_entropie  = math.log2(20)  # 20 acides aminés possibles
+    diversite_aa  = round(entropie / max_entropie, 3)
+
     return {
+        # Features existantes
         'taille'            : n,
         'hydrophobicite_moy': round(sum(hydro_values) / n, 3),
         'charge_nette'      : round(charge_totale, 2),
-        'bfactor_moy'       : round(sum(b_factors) / len(b_factors), 2),
+        'bfactor_moy'       : round(bfactor_moy, 2),
         'ratio_aromatique'  : round(nb_aromatiques  / n, 3),
         'ratio_hydrophobe'  : round(nb_hydrophobes  / n, 3),
         'ratio_donneurs_h'  : round(nb_donneurs_h   / n, 3),
         'ratio_accepteurs_h': round(nb_accepteurs_h / n, 3),
+
+        # Nouvelles features
+        'ratio_polaire'     : round(nb_polaires / n, 3),
+        'ratio_charge'      : round(nb_charges  / n, 3),
+
+        'ratio_petits'      : round(nb_petits / n, 3),
+        'ratio_grands'      : round(nb_grands  / n, 3),
+
+        'diversite_aa'      : diversite_aa,
         'composition'       : composition
     }
+
 def afficher_features(pdb_id, ligand, features):
     """Affiche les features de façon lisible"""
     print(f"\n  Features — {pdb_id} / {ligand}")
