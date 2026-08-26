@@ -7,7 +7,8 @@ from Bio.PDB import PDBParser
 from config import (
     PROTEINES, DATASET_CSV, LIGANDS_JSON,
     DOSSIER_PDB, RAYON_SITE_LIAISON,
-    HYDROPHOBICITE, CHARGE          # ← importées depuis config
+    HYDROPHOBICITE, CHARGE, AA_AROMATIQUES, AA_HYDROPHOBES,
+    AA_DONNEURS_H, AA_ACCEPTEURS_H          # ← importées depuis config
 )
 from load_pdb import load_structure
 from extract_ligand import find_binding_site, get_residues
@@ -37,7 +38,10 @@ def initialiser_csv():
             writer.writerow([
                 'pdb_id', 'ligand', 'tag',
                 'taille', 'hydrophobicite',
-                'charge_nette', 'bfactor', 'label'
+                'charge_nette', 'bfactor',
+                'ratio_aromatique', 'ratio_hydrophobe',
+                'ratio_donneurs_h', 'ratio_accepteurs_h',
+                'label'
             ])
         print(f"Dataset initialisé → {DATASET_CSV} ✅")
 
@@ -51,24 +55,30 @@ def sauvegarder_features(pdb_id, ligand, tag, features, label=1):
             features['hydrophobicite_moy'],
             features['charge_nette'],
             features['bfactor_moy'],
+            features['ratio_aromatique'],
+            features['ratio_hydrophobe'],
+            features['ratio_donneurs_h'],
+            features['ratio_accepteurs_h'],
             label
-        ])
-    print(f"  Sauvegardé → {DATASET_CSV} ✅")
+            ])
 
 def calculer_features(binding_residues):
-    """Calcule les features biophysiques d'un site de liaison"""
+    """Calcule 8 features biophysiques d'un site de liaison"""
     if not binding_residues:
         return None
 
-    hydro_values  = []
-    charge_totale = 0
-    b_factors     = []
-    composition   = {}
+    hydro_values    = []
+    charge_totale   = 0
+    b_factors       = []
+    composition     = {}
+    nb_aromatiques  = 0
+    nb_hydrophobes  = 0
+    nb_donneurs_h   = 0
+    nb_accepteurs_h = 0
 
     for res in binding_residues:
         resname = res.get_resname()
 
-        # Utilise les échelles depuis config.py
         hydro_values.append(HYDROPHOBICITE.get(resname, 0))
         charge_totale += CHARGE.get(resname, 0)
 
@@ -77,15 +87,24 @@ def calculer_features(binding_residues):
 
         composition[resname] = composition.get(resname, 0) + 1
 
+        if resname in AA_AROMATIQUES  : nb_aromatiques  += 1
+        if resname in AA_HYDROPHOBES  : nb_hydrophobes  += 1
+        if resname in AA_DONNEURS_H   : nb_donneurs_h   += 1
+        if resname in AA_ACCEPTEURS_H : nb_accepteurs_h += 1
+
     n = len(binding_residues)
+
     return {
         'taille'            : n,
         'hydrophobicite_moy': round(sum(hydro_values) / n, 3),
         'charge_nette'      : round(charge_totale, 2),
         'bfactor_moy'       : round(sum(b_factors) / len(b_factors), 2),
+        'ratio_aromatique'  : round(nb_aromatiques  / n, 3),
+        'ratio_hydrophobe'  : round(nb_hydrophobes  / n, 3),
+        'ratio_donneurs_h'  : round(nb_donneurs_h   / n, 3),
+        'ratio_accepteurs_h': round(nb_accepteurs_h / n, 3),
         'composition'       : composition
     }
-
 def afficher_features(pdb_id, ligand, features):
     """Affiche les features de façon lisible"""
     print(f"\n  Features — {pdb_id} / {ligand}")
@@ -172,24 +191,32 @@ if __name__ == "__main__":
 
     nouvelles = 0
 
-    for pdb_id in PROTEINES:
+    # Itérer sur les protéines dans ligands.json
+    for pdb_id, ligands in resultats.items():
 
-        if pdb_id not in resultats:
-            print(f"\n[{pdb_id}] Pas encore traité → ignoré")
+        # Skip si pas de ligands valides
+        if not ligands:
             continue
 
-        print(f"\n{'='*60}")
-        print(f"  {pdb_id}")
-        print(f"{'='*60}")
+        
+        for ligand_data in ligands:
 
-        for ligand_data in resultats[pdb_id]:
+            # Vérifier que l'entrée est complète
+            if not isinstance(ligand_data, dict):
+                continue
+            if 'resname' not in ligand_data:
+                continue
+            if 'binding_residues' not in ligand_data:
+                continue
+            if not ligand_data['binding_residues']:
+                continue
+
             resname = ligand_data['resname']
-            tag     = ligand_data['tag']
+            tag     = ligand_data.get('tag', 'inconnu')
             cle     = f"{pdb_id};{resname}"
 
-            # Déjà dans le dataset → skip automatique
+            # Déjà dans le dataset → skip
             if cle in deja_traites:
-                print(f"\n  {resname} → déjà traité ✅ — ignoré")
                 continue
 
             # Recalculer les résidus
@@ -198,10 +225,9 @@ if __name__ == "__main__":
             )
 
             if not binding_residues:
-                print(f"\n  {resname} → résidus introuvables ❌")
                 continue
 
-            # Calculer + afficher + sauvegarder
+            # Calculer + sauvegarder
             features = calculer_features(binding_residues)
             if not features:
                 continue
@@ -211,7 +237,7 @@ if __name__ == "__main__":
             deja_traites.add(cle)
             nouvelles += 1
 
-    # Résumé + affichage dataset
+    # Résumé
     print(f"\n{'='*60}")
     print(f"  {nouvelles} nouvelle(s) entrée(s) ajoutée(s)")
     print(f"{'='*60}")

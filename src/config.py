@@ -8,11 +8,16 @@ import os
 # ─── Dossiers ───────────────────────────────────────────────────
 DOSSIER_PDB     = "data"
 DOSSIER_RESULTS = "results"
-DATASET_CSV     = "data/dataset.csv"
+#DATASET_CSV     = "data/dataset.csv"
 
 # Création automatique des dossiers si inexistants
 os.makedirs(DOSSIER_PDB,     exist_ok=True)
 os.makedirs(DOSSIER_RESULTS, exist_ok=True)
+
+# ─── Paramètres de téléchargement ───────────────────────────────
+BATCH_SIZE        = 500   # structures par lot
+PAUSE_SECONDES    = 1     # pause entre téléchargements
+TENTATIVES_MAX    = 3     # tentatives en cas d'erreur
 
 # ─── Fichiers de sortie ─────────────────────────────────────────
 DATASET_CSV      = os.path.join(DOSSIER_RESULTS, "dataset.csv")
@@ -23,11 +28,7 @@ PDBBIND_IDS_OUT = os.path.join(DOSSIER_RESULTS, "pdbbind_ids.txt")
 
 # ─── Protéines à analyser ───────────────────────────────────────
 # Ajoutez ou supprimez des PDB IDs selon vos besoins
-PROTEINES = [
-    "1HVR",   # Protéase VIH
-    "1JFF",   # Tubuline + Taxol
-    "2J6M",   # EGFR + Erlotinib
-]
+PROTEINES = "pdbbind_ids.txt"
 
 # ─── Paramètres d'analyse ───────────────────────────────────────
 RAYON_SITE_LIAISON = 5.0   # en Angströms
@@ -79,3 +80,15 @@ CHARGE = {
     'ARG': +1,   # Arginine — positif
     'HIS': +0.1  # Histidine — partiellement positif
 }
+
+# ─── Acides aminés par catégorie ────────────────────────────────
+AA_AROMATIQUES  = {'PHE', 'TYR', 'TRP', 'HIS'}
+
+AA_HYDROPHOBES  = {'ALA', 'VAL', 'ILE', 'LEU', 
+                   'MET', 'PHE', 'TRP', 'PRO'}
+
+AA_DONNEURS_H   = {'SER', 'THR', 'TYR', 'TRP', 
+                   'ASN', 'GLN', 'LYS', 'ARG', 'HIS'}
+
+AA_ACCEPTEURS_H = {'ASP', 'GLU', 'SER', 'THR', 
+                   'ASN', 'GLN', 'HIS'}
