@@ -17,7 +17,7 @@ from config import DATASET_CSV, DOSSIER_RESULTS
 
 warnings.filterwarnings('ignore')
 
-# ─── Configuration ────────────────────────────────────────────────
+# Configuration
 
 MODEL_FILE    = os.path.join(DOSSIER_RESULTS, "model_rf.pkl")
 METRICS_FILE  = os.path.join(DOSSIER_RESULTS, "metrics.json")
@@ -40,10 +40,9 @@ FEATURES = [
     'ratio_positif', 'ratio_negatif',
     'ratio_flexible', 'ratio_cysteine',
     'hydro_max', 'hydro_min',
-    'charge_absolue'
+    'charge_absolue',
+    'sasa_totale', 'sasa_moy', 'volume'
 ]
-
-# ─── Fonctions ────────────────────────────────────────────────────
 
 def charger_dataset():
     """Charge et prépare le dataset"""
@@ -121,7 +120,7 @@ def entrainer_xgboost(X_train, y_train):
         colsample_bytree = 0.8,
         random_state     = 42,
         n_jobs           = -1,
-        scale_pos_weight = 2.5,  # gère le déséquilibre
+        scale_pos_weight = 2.5, 
         eval_metric      = 'auc',
         verbosity        = 0
     )
@@ -232,8 +231,6 @@ def tester_prediction(model):
     print(f"\n{'─'*60}")
     print(f"  Résultat : {corrects}/{total} ({corrects/total*100:.0f}%)")
     print(f"{'='*60}")
-
-# ─── Point d'entrée ───────────────────────────────────────────────
 
 if __name__ == "__main__":
 

@@ -4,6 +4,7 @@ import math
 import os
 import warnings
 from Bio.PDB import PDBParser
+from Bio.PDB.SASA import ShrakeRupley
 
 from config import (
     PROTEINES, DATASET_CSV, LIGANDS_JSON,
@@ -21,7 +22,7 @@ from extract_ligand import find_binding_site, get_residues
 
 warnings.filterwarnings('ignore')
 
-# ─── Fonctions utilitaires ────────────────────────────────────────
+# Fonctions utilitaires
 
 def charger_ligands_traites():
     """Charge les pdb_id/ligands déjà dans le dataset CSV"""
@@ -54,12 +55,12 @@ def initialiser_csv():
                 'ratio_flexible', 'ratio_cysteine',
                 'hydro_max', 'hydro_min',
                 'charge_absolue', 
+                'sasa_totale', 'sasa_moy', 'volume',
                 'label'
             ])
         print(f"Dataset initialisé → {DATASET_CSV} ✅")
 
-def sauvegarder_features(pdb_id, ligand, tag, features, label=1):
-    """Ajoute une ligne au dataset CSV"""
+def sauvegarder_features(pdb_id, ligand, tag, features, geo, label=1):
     with open(DATASET_CSV, 'a', newline='', encoding='utf-8-sig') as f:
         writer = csv.writer(f, delimiter=';')
         writer.writerow([
@@ -74,7 +75,7 @@ def sauvegarder_features(pdb_id, ligand, tag, features, label=1):
             features['ratio_accepteurs_h'],
             features['ratio_polaire'],
             features['ratio_charge'],
-            features['ratio_petits'],          
+            features['ratio_petits'],
             features['ratio_grands'],
             features['diversite_aa'],
             features['ratio_positif'],
@@ -84,8 +85,11 @@ def sauvegarder_features(pdb_id, ligand, tag, features, label=1):
             features['hydro_max'],
             features['hydro_min'],
             features['charge_absolue'],
+            geo['sasa_totale'],           
+            geo['sasa_moy'],
+            geo['volume'],
             label
-            ])
+        ])
 
 def calculer_features(binding_residues):
     """Calcule 12 features biophysiques d'un site de liaison"""
@@ -181,8 +185,49 @@ def calculer_features(binding_residues):
         'charge_absolue' : round(sum(abs(CHARGE.get(r.get_resname(), 0))
                    for r in binding_residues), 2),
         'diversite_aa'      : diversite_aa,
-        'composition'       : composition
+        'composition'       : composition,
+        'sasa_totale' : 0.0,
+        'sasa_moy'    : 0.0,
+        'volume'      : 0.0
     }
+
+def calculer_sasa_et_volume(structure, binding_residues):
+    """
+    Calcule la SASA et le volume estimé du site de liaison
+    en utilisant ShrakeRupley (BioPython)
+    """
+
+    try:
+        # Calculer la SASA pour toute la structure
+        sr = ShrakeRupley()
+        sr.compute(structure, level="R")
+
+        sasa_totale = 0
+        for res in binding_residues:
+            # Récupérer la SASA calculée pour ce résidu
+            sasa_totale += res.sasa
+
+        n = len(binding_residues)
+        sasa_moy = sasa_totale / n if n > 0 else 0
+
+        # Estimation du volume par comptage d'atomes
+        # Rayon de Van der Waals moyen = 1.8 Å
+        # Volume sphère = 4/3 × π × r³
+        nb_atomes = sum(len(list(r.get_atoms())) for r in binding_residues)
+        volume_estime = round(nb_atomes * (4/3) * math.pi * (1.8**3), 2)
+
+        return {
+            'sasa_totale' : round(sasa_totale, 2),
+            'sasa_moy'    : round(sasa_moy, 2),
+            'volume'      : volume_estime
+        }
+
+    except Exception as e:
+        return {
+            'sasa_totale' : 0.0,
+            'sasa_moy'    : 0.0,
+            'volume'      : 0.0
+        }
 
 def afficher_features(pdb_id, ligand, features):
     """Affiche les features de façon lisible"""
@@ -230,10 +275,10 @@ def afficher_dataset():
     print(f"\n  {len(rows)} entrée(s) dans le dataset.")
 
 def recuperer_residus_depuis_structure(pdb_id, ligand_data):
-    """Recharge la structure et recalcule les résidus du site"""
+    """Recharge la structure et recalcule les résidus + SASA + volume"""
     structure = load_structure(pdb_id)
     if not structure:
-        return None
+        return None, None
 
     all_ligands = get_residues(structure, 'ligand')
     ligand_obj  = next(
@@ -243,11 +288,14 @@ def recuperer_residus_depuis_structure(pdb_id, ligand_data):
     )
 
     if not ligand_obj:
-        return None
+        return None, None
 
-    return find_binding_site(structure, ligand_obj)
+    binding_residues = find_binding_site(structure, ligand_obj)
 
-# ─── Point d'entrée ───────────────────────────────────────────────
+    # Calculer SASA et volume
+    geo = calculer_sasa_et_volume(structure, binding_residues)
+
+    return binding_residues, geo
 
 if __name__ == "__main__":
 
@@ -298,12 +346,12 @@ if __name__ == "__main__":
             if cle in deja_traites:
                 continue
 
-            # Recalculer les résidus
-            binding_residues = recuperer_residus_depuis_structure(
+            # Recalculer les résidus + géométrie
+            binding_residues, geo = recuperer_residus_depuis_structure(
                 pdb_id, ligand_data
             )
 
-            if not binding_residues:
+            if not binding_residues or not geo:
                 continue
 
             # Calculer + sauvegarder
@@ -312,7 +360,7 @@ if __name__ == "__main__":
                 continue
 
             afficher_features(pdb_id, resname, features)
-            sauvegarder_features(pdb_id, resname, tag, features)
+            sauvegarder_features(pdb_id, resname, tag, features, geo)
             deja_traites.add(cle)
             nouvelles += 1
 

@@ -3,8 +3,6 @@ import re
 from config import DOSSIER_RESULTS, PDBBIND_INDEX, PDBBIND_IDS_OUT
 
 
-# ─── Fonctions ────────────────────────────────────────────────────
-
 def parser_ligne(ligne):
     """
     Parse une ligne du fichier PDBbind.
@@ -149,7 +147,6 @@ def afficher_exemples(entrees, n=5):
               f"affinité={entry['affinity']}  "
               f"ligand={entry['ligand']}")
 
-# ─── Point d'entrée ───────────────────────────────────────────────
 
 if __name__ == "__main__":
 

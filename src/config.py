@@ -5,7 +5,7 @@
 
 import os
 
-# ─── Dossiers ───────────────────────────────────────────────────
+# Dossiers 
 DOSSIER_PDB     = "data"
 DOSSIER_RESULTS = "results"
 #DATASET_CSV     = "data/dataset.csv"
@@ -14,29 +14,29 @@ DOSSIER_RESULTS = "results"
 os.makedirs(DOSSIER_PDB,     exist_ok=True)
 os.makedirs(DOSSIER_RESULTS, exist_ok=True)
 
-# ─── Paramètres de téléchargement ───────────────────────────────
+# Paramètres de téléchargement 
 BATCH_SIZE        = 500   # structures par lot
 PAUSE_SECONDES    = 1     # pause entre téléchargements
 TENTATIVES_MAX    = 3     # tentatives en cas d'erreur
 
-# ─── Fichiers de sortie ─────────────────────────────────────────
+# Fichiers de sortie
 DATASET_CSV      = os.path.join(DOSSIER_RESULTS, "dataset.csv")
 LIGANDS_JSON     = os.path.join(DOSSIER_RESULTS, "ligands.json")
 PDBBIND_INDEX   = "data/pdbbind_index.lst"
 PDBBIND_IDS_OUT = os.path.join(DOSSIER_RESULTS, "pdbbind_ids.txt")
 
 
-# ─── Protéines à analyser ───────────────────────────────────────
+# Protéines à analyser
 # Ajoutez ou supprimez des PDB IDs selon vos besoins
 PROTEINES = "pdbbind_ids.txt"
 
-# ─── Paramètres d'analyse ───────────────────────────────────────
+# Paramètres d'analyse 
 RAYON_SITE_LIAISON = 5.0   # en Angströms
 ATOMES_MIN_LIGAND  = 10    # nb atomes minimum pour un ligand valide
 POIDS_MIN_LIGAND   = 150   # Da
 POIDS_MAX_LIGAND   = 2000  # Da
 
-# ─── Nucléotides naturels à exclure ─────────────────────────────
+# Nucléotides naturels à exclure 
 NUCLEOTIDES_NATURELS =  {
     'ATP', 'ADP', 'AMP',  # Adénosine
     'GTP', 'GDP', 'GMP',  # Guanosine
@@ -46,7 +46,7 @@ NUCLEOTIDES_NATURELS =  {
     'HEM', 'HEA', 'APC'         # Hème
 }
 
-# ─── Types non-thérapeutiques (classification RCSB) ─────────────
+# Types non-thérapeutiques (classification RCSB) 
 NON_DRUG_TYPES = {
     'l-peptide linking',              # Acides aminés naturels
     'd-peptide linking',              # Acides aminés configuration D
@@ -62,7 +62,7 @@ NON_DRUG_TYPES = {
     'd-saccharide',                   # Sucres configuration D
 }
 
-# ─── Sucres naturels à exclure ───────────────────────────────────
+# Sucres naturels à exclure 
 SUCRES_NATURELS = {
     'GAL', 'GLA', 'BGC', 'GLC',  # Galactose / Glucose
     'MAN', 'FUC', 'SIA', 'NAG',  # Mannose, Fucose, Acide sialique
@@ -71,11 +71,11 @@ SUCRES_NATURELS = {
     'FRU', 'RIB', 'XYL', 'LYX',  # autres monosaccharides
 }
 
-# ─── Taille des acides aminés ────────────────────────────────────
+# Taille des acides aminés 
 AA_PETITS = {'GLY', 'ALA', 'SER'}
 AA_GRANDS  = {'TRP', 'TYR', 'PHE', 'ARG', 'LYS'}
 
-# ─── Échelles biophysiques ───────────────────────────────────────
+#  Échelles biophysiques 
 # Échelle de Kyte & Doolittle (1982)
 HYDROPHOBICITE = {
     'ALA':  1.8, 'VAL':  4.2, 'ILE':  4.5, 'LEU':  3.8,
@@ -94,7 +94,7 @@ CHARGE = {
     'HIS': +0.1  # Histidine — partiellement positif
 }
 
-# ─── Acides aminés par catégorie ────────────────────────────────
+# Acides aminés par catégorie
 AA_AROMATIQUES  = {'PHE', 'TYR', 'TRP', 'HIS'}
 
 AA_HYDROPHOBES  = {'ALA', 'VAL', 'ILE', 'LEU', 
@@ -106,26 +106,26 @@ AA_DONNEURS_H   = {'SER', 'THR', 'TYR', 'TRP',
 AA_ACCEPTEURS_H = {'ASP', 'GLU', 'SER', 'THR', 
                    'ASN', 'GLN', 'HIS'}
 
-# ─── Acides aminés polaires ──────────────────────────────────────
+# Acides aminés polaires 
 AA_POLAIRES = {
     'SER', 'THR', 'ASN', 'GLN',
     'TYR', 'CYS', 'HIS'
 }
 
-# ─── Acides aminés chargés ───────────────────────────────────────
+#  Acides aminés chargés
 AA_CHARGES = {
     'ASP', 'GLU',  # négatifs
     'LYS', 'ARG', 'HIS'  # positifs
 }
 
-# ─── Résidus chargés positivement ───────────────────────────────
+# Résidus chargés positivement 
 AA_POSITIFS = {'LYS', 'ARG', 'HIS'}
 
-# ─── Résidus chargés négativement ───────────────────────────────
+#  Résidus chargés négativement 
 AA_NEGATIFS = {'ASP', 'GLU'}
 
-# ─── Résidus flexibles ──────────────────────────────────────────
+# Résidus flexibles
 AA_FLEXIBLES = {'GLY', 'PRO'}
 
-# ─── Cystéine ───────────────────────────────────────────────────
+# Cystéine
 AA_CYSTEINE = {'CYS'}

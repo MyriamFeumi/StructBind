@@ -4,6 +4,7 @@ import os
 import math
 import random
 import warnings
+from Bio.PDB.SASA import ShrakeRupley
 from Bio.PDB import PDBParser
 
 from config import (
@@ -20,8 +21,6 @@ from load_pdb import load_structure
 
 warnings.filterwarnings('ignore')
 
-# ─── Configuration ────────────────────────────────────────────────
-
 # Nombre d'exemples négatifs par protéine
 NB_NEGATIFS_PAR_PROTEINE = 3
 
@@ -29,7 +28,7 @@ NB_NEGATIFS_PAR_PROTEINE = 3
 TAILLE_MIN_NEGATIF = 10
 TAILLE_MAX_NEGATIF = 40
 
-# ─── Fonctions utilitaires ────────────────────────────────────────
+# Fonctions utilitaires
 
 def charger_ligands_traites():
     """Charge les résultats de extract_ligand.py"""
@@ -174,7 +173,32 @@ def calculer_features_negatif(residus):
         'composition'       : composition
     }
 
-def sauvegarder_negatif(pdb_id, features, numero):
+def calculer_sasa_et_volume(structure, residus):
+    """Calcule SASA et volume estimé pour une fausse cavité"""
+    try:
+        sr = ShrakeRupley()
+        sr.compute(structure, level="R")
+
+        sasa_totale = sum(res.sasa for res in residus)
+        n           = len(residus)
+        sasa_moy    = sasa_totale / n if n > 0 else 0
+
+        nb_atomes     = sum(len(list(r.get_atoms())) for r in residus)
+        volume_estime = round(nb_atomes * (4/3) * math.pi * (1.8**3), 2)
+
+        return {
+            'sasa_totale': round(sasa_totale, 2),
+            'sasa_moy'   : round(sasa_moy, 2),
+            'volume'     : volume_estime
+        }
+    except:
+        return {
+            'sasa_totale': 0.0,
+            'sasa_moy'   : 0.0,
+            'volume'     : 0.0
+        }
+
+def sauvegarder_negatif(pdb_id, features, geo, numero):
     with open(DATASET_CSV, 'a', newline='', encoding='utf-8-sig') as f:
         writer = csv.writer(f, delimiter=';')
         writer.writerow([
@@ -201,6 +225,9 @@ def sauvegarder_negatif(pdb_id, features, numero):
             features['hydro_max'],
             features['hydro_min'],
             features['charge_absolue'],
+            geo['sasa_totale'],            # ← nouveaux
+            geo['sasa_moy'],
+            geo['volume'],
             0
         ])
 
@@ -230,8 +257,6 @@ def afficher_stats():
     print(f"  Ratio négatifs/positifs      : {ratio:.2f}")
     print(f"  (idéal : entre 1.0 et 3.0)")
     print(f"{'='*50}")
-
-# ─── Point d'entrée ───────────────────────────────────────────────
 
 if __name__ == "__main__":
 
@@ -286,11 +311,18 @@ if __name__ == "__main__":
             if not fausse_cavite:
                 continue
 
+            
             features = calculer_features_negatif(fausse_cavite)
             if not features:
                 continue
 
-            sauvegarder_negatif(pdb_id, features, i + 1)
+            # Charger la structure pour SASA
+            structure = load_structure(pdb_id)
+            geo = calculer_sasa_et_volume(structure, fausse_cavite) if structure else {
+                'sasa_totale': 0.0, 'sasa_moy': 0.0, 'volume': 0.0
+            }
+
+            sauvegarder_negatif(pdb_id, features, geo, i + 1)
             negatifs_generes += 1
             nouvelles += 1
 

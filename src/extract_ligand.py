@@ -17,7 +17,7 @@ from load_pdb import load_structure
 
 warnings.filterwarnings('ignore')
 
-# ─── Fonctions utilitaires ────────────────────────────────────────
+# Fonctions utilitaires 
 
 def charger_resultats_existants():
     """Charge les résultats déjà traités depuis le fichier JSON"""
@@ -248,8 +248,6 @@ def afficher_resume(resultats):
             print(f"    [{lig['tag'].upper()}] {lig['resname']} "
                   f"— {len(lig['binding_residues'])} résidus")
     print(f"\n  Résultats sauvegardés → {LIGANDS_JSON} ✅")
-
-# ─── Point d'entrée ───────────────────────────────────────────────
 
 if __name__ == "__main__":
 
