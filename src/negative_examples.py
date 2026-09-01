@@ -11,7 +11,6 @@ from config import (
     PROTEINES, LIGANDS_JSON, DATASET_CSV,
     DOSSIER_PDB, HYDROPHOBICITE, CHARGE, AA_AROMATIQUES, AA_HYDROPHOBES,
     AA_DONNEURS_H, AA_ACCEPTEURS_H,
-    AA_DONNEURS_H, AA_ACCEPTEURS_H,
     AA_POLAIRES, AA_CHARGES,
     AA_PETITS, AA_GRANDS,
     AA_POSITIFS, AA_NEGATIFS,      
@@ -191,6 +190,7 @@ def calculer_sasa_et_volume(structure, residus):
             'sasa_moy'   : round(sasa_moy, 2),
             'volume'     : volume_estime
         }
+    # Après :
     except:
         return {
             'sasa_totale': 0.0,
@@ -268,7 +268,7 @@ if __name__ == "__main__":
 
     proteines_valides = [
         pdb_id for pdb_id, ligands in resultats.items()
-        if len(ligands) > 0  # protéines avec au moins un ligand valide
+        if len(ligands) > 0  
     ]
 
     print(f"Protéines avec ligands valides : {len(proteines_valides)}")
@@ -317,7 +317,6 @@ if __name__ == "__main__":
                 continue
 
             # Charger la structure pour SASA
-            structure = load_structure(pdb_id)
             geo = calculer_sasa_et_volume(structure, fausse_cavite) if structure else {
                 'sasa_totale': 0.0, 'sasa_moy': 0.0, 'volume': 0.0
             }

@@ -60,7 +60,7 @@ def initialiser_csv():
             ])
         print(f"Dataset initialisé → {DATASET_CSV} ✅")
 
-def sauvegarder_features(pdb_id, ligand, tag, features, geo, label=1):
+def sauvegarder_features(pdb_id, ligand, tag, features, label=1):
     with open(DATASET_CSV, 'a', newline='', encoding='utf-8-sig') as f:
         writer = csv.writer(f, delimiter=';')
         writer.writerow([
@@ -85,21 +85,14 @@ def sauvegarder_features(pdb_id, ligand, tag, features, geo, label=1):
             features['hydro_max'],
             features['hydro_min'],
             features['charge_absolue'],
-            geo['sasa_totale'],           
-            geo['sasa_moy'],
-            geo['volume'],
+            features['sasa_totale'],
+            features['sasa_moy'],
+            features['volume'],
             label
         ])
 
-def calculer_features(binding_residues):
+def calculer_features(binding_residues, structure = None):
     """Calcule 12 features biophysiques d'un site de liaison"""
-    nb_petits = 0
-    nb_grands  = 0
-    nb_positifs  = 0
-    nb_negatifs  = 0
-    nb_flexibles = 0
-    nb_cysteine  = 0
-    hydro_list   = []
 
     if not binding_residues:
         return None
@@ -114,6 +107,12 @@ def calculer_features(binding_residues):
     nb_accepteurs_h = 0
     nb_polaires     = 0
     nb_charges      = 0
+    nb_petits = 0
+    nb_grands  = 0
+    nb_positifs  = 0
+    nb_negatifs  = 0
+    nb_flexibles = 0
+    nb_cysteine  = 0
 
     for res in binding_residues:
         resname = res.get_resname()
@@ -143,10 +142,6 @@ def calculer_features(binding_residues):
 
     # Calcul de l'écart-type des B-factors
     bfactor_moy = sum(b_factors) / len(b_factors)
-    bfactor_std = round(
-        (sum((b - bfactor_moy)**2 for b in b_factors)
-         / len(b_factors)) ** 0.5, 2
-    )
 
     # Calcul de la diversité des acides aminés
     # Entropie de Shannon normalisée
@@ -159,6 +154,11 @@ def calculer_features(binding_residues):
     # Normaliser entre 0 et 1
     max_entropie  = math.log2(20)  # 20 acides aminés possibles
     diversite_aa  = round(entropie / max_entropie, 3)
+
+    if structure:
+        geo = calculer_sasa_et_volume(structure, binding_residues)
+    else:
+        geo = {'sasa_totale': 0.0, 'sasa_moy': 0.0, 'volume': 0.0}
 
     return {
         # Features existantes
@@ -186,9 +186,9 @@ def calculer_features(binding_residues):
                    for r in binding_residues), 2),
         'diversite_aa'      : diversite_aa,
         'composition'       : composition,
-        'sasa_totale' : 0.0,
-        'sasa_moy'    : 0.0,
-        'volume'      : 0.0
+        'sasa_totale' : geo['sasa_totale'],
+        'sasa_moy'    : geo['sasa_moy'],
+        'volume'      : geo['volume']
     }
 
 def calculer_sasa_et_volume(structure, binding_residues):
@@ -223,6 +223,7 @@ def calculer_sasa_et_volume(structure, binding_residues):
         }
 
     except Exception as e:
+        print(f"  Erreur SASA : {e}")  # ← ajouter cette ligne
         return {
             'sasa_totale' : 0.0,
             'sasa_moy'    : 0.0,
@@ -292,10 +293,7 @@ def recuperer_residus_depuis_structure(pdb_id, ligand_data):
 
     binding_residues = find_binding_site(structure, ligand_obj)
 
-    # Calculer SASA et volume
-    geo = calculer_sasa_et_volume(structure, binding_residues)
-
-    return binding_residues, geo
+    return binding_residues, structure
 
 if __name__ == "__main__":
 
@@ -347,20 +345,20 @@ if __name__ == "__main__":
                 continue
 
             # Recalculer les résidus + géométrie
-            binding_residues, geo = recuperer_residus_depuis_structure(
+            binding_residues, structure = recuperer_residus_depuis_structure(
                 pdb_id, ligand_data
             )
 
-            if not binding_residues or not geo:
+            if not binding_residues or not structure:
                 continue
 
             # Calculer + sauvegarder
-            features = calculer_features(binding_residues)
+            features = calculer_features(binding_residues, structure)
             if not features:
                 continue
 
             afficher_features(pdb_id, resname, features)
-            sauvegarder_features(pdb_id, resname, tag, features, geo)
+            sauvegarder_features(pdb_id, resname, tag, features)
             deja_traites.add(cle)
             nouvelles += 1
 
