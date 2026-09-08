@@ -79,7 +79,7 @@ class Predictor:
 
         X = numpy.array(valeurs).reshape(1, -1)
         score = self.model.predict_proba(X)[0][1]
-        return score
+        return float(score)
 
     def get_residus_biopython(self, structure, residus_str):
         # convertit les strings de résidus en objets BioPython #

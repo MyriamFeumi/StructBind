@@ -1,6 +1,17 @@
+import sys
+import os
+sys.path.append(os.path.dirname(__file__))
 from fastapi import FastAPI
+from models import PredictRequest, PredictResponse
+from predict import Predictor
 
 app = FastAPI()
+
+predictor = Predictor()
+
+@app.get("/")
+def accueil():
+    return {"message": "Bienvenue sur StructBind !"}
 
 @app.get("/health")
 def health():
@@ -18,6 +29,7 @@ def info():
     "author"   : "Myriam Feumi"
     }   
 
-@app.get("/predict")
-def predict(fasta):
-    return
+@app.post("/predict")
+def predict(request: PredictRequest):
+    resultats = predictor.predire(request.sequence)
+    return resultats
