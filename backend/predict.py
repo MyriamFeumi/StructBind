@@ -2,6 +2,8 @@ import os
 import tempfile
 from Bio.PDB import PDBParser
 import requests
+import subprocess
+import json
 import numpy
 import time
 import pickle # Sauvegarder les objets python dans un fichier binaire (XGBoost)
@@ -31,20 +33,40 @@ class Predictor:
             raise Exception("Erreur ESMFold : structure non générée") 
 
     def detecter_sites(self, pdb_content):
-        url = "https://proteins.plus/api/dogsite_rest"
-    
-        for tentative in range(3):
-            response = requests.post(url, files={'pdb': pdb_content})
-        
-            if response.status_code == 200:
-                return response.json()
-            elif response.status_code == 429:
-                print(f"Limite atteinte → attente 60 secondes...")
-                time.sleep(60)
-            else:
-                raise Exception(f"Erreur DoGSiteScorer : {response.status_code}")
-    
-        raise Exception("Limite de requêtes dépassée")
+        # Détecte les cavité dans la structure avec fpocket #
+        with tempfile.NamedTemporaryFile(
+            suffix='.pdb', mode='w', delete=False
+
+        ) as tmp:
+            tmp.write(pdb_content)
+            tmp_path = tmp.name
+
+        subprocess.run(['fpocket', '-f', tmp_path], capture_output=True)
+        output_dir = tmp_path.replace('.pdb', '_out')
+        print(f"output dir : {output_dir}")
+        print(f"Existe : {os.path.exists(output_dir)}")
+        if os.path.exists(output_dir):
+            print(f"Fichiers : {os.listdir(output_dir)}")
+
+        sites = []
+
+        if os.path.exists(output_dir):
+            pockets_dir = os.path.join(output_dir, 'pockets')
+
+            if os.path.exists(pockets_dir):
+                parser = PDBParser()
+
+                for fichier in os.listdir(pockets_dir):
+                    if fichier.endswith('.pdb') :
+                        pocket_path = os.path.join(pockets_dir, fichier)
+                        structure_pocket = parser.get_structure('pocket', pocket_path)
+                        residues = [f"{r.get_resname()}{r.id[1]}"
+                                    for r in structure_pocket[0].get_residues()]
+                        sites.append({
+                                'residues':residues,
+                                'volume'  :len(residues)*150.0 # 150 est le volume moyen d'un aa
+                                })
+        return {'sites': sites}
 
     def calculer_features(self, binding_residues, structure):
         # alcule des features pour chacune des cavités détectées par DoGSiteScorer
@@ -52,7 +74,10 @@ class Predictor:
 
     def predire_scores(self, features):
         # Prédit le score ente 0 et 1 d'un site de laison déttecté
-        X = numpy.array(features).reshape(1, -1)
+        valeurs = [v for v in features.values()
+                    if isinstance(v, (int, float))]
+
+        X = numpy.array(valeurs).reshape(1, -1)
         score = self.model.predict_proba(X)[0][1]
         return score
 
@@ -87,7 +112,9 @@ class Predictor:
         for site in sites_json.get('sites', []):
             residus_bio = self.get_residus_biopython(structure, site['residues'])
             features = self.calculer_features(residus_bio, structure)
-            score = self.predire_scores(list(features.values())[:-1])
+            if not features:
+                continue
+            score = self.predire_scores(features)
 
             resultats.append({
                         'score'   : round(score, 3),
@@ -104,4 +131,13 @@ if __name__ == "__main__":
     predictor = Predictor()
     sequence  = "PQITLWQRPLVTIKIGGQLKEALLDTGADDTVLEEMSLPGRWKPKMIGGIGGFIKVRQYDQILIEICGHKAIGTVLVGPTPVNIIGRNLLTQIGCTLNF"
     resultats = predictor.predire(sequence)
-    print(resultats)
+
+    print(f"\n{'='*50}")
+    print(f"  {len(resultats['sites'])} sites de liaison détectés")
+    print(f"{'='*50}")
+
+    for i, site in enumerate(resultats['sites'], 1):
+        print(f"\n  Site {i} :")
+        print(f"  Score          : {site['score']*100:.2f}%")
+        print(f"  Volume         : {site['volume']:.1f} Å³")
+        print(f"  Résidus ({len(site['residus'])}) : {', '.join(site['residus'][:5])}...")
