@@ -1,5 +1,6 @@
 import './App.css';
 import { useState } from 'react';
+import { useEffect, useRef } from 'react';
 
 function App() {
   // Les états vont ICI
@@ -7,6 +8,36 @@ function App() {
   const [fichier, setFichier]   = useState(null);
   const [resultats, setResultats] = useState(null);
   const [loading, setLoading]   = useState(false);
+  const viewerRef = useRef(null);
+  const getTitreClass = (score) => {
+  if (score >= 0.90) return "titre-principal";
+  if (score >= 0.80) return "titre-tres-bon";
+  if (score >= 0.60) return "titre-bon";
+  if (score >= 0.40) return "titre-possible";
+  return "titre-fausse";
+};
+
+  useEffect(() => {
+    if (resultats && viewerRef.current) {
+      viewerRef.current.innerHTML = '';
+    
+    // Créer le viewer 3Dmol
+      const viewer = window.$3Dmol.createViewer(
+        viewerRef.current,
+        { backgroundColor: '#16213e' }
+      );
+
+    // Charger la structure .pdb
+      viewer.addModel(resultats.pdb_content, 'pdb');
+
+    // Style cartoon pour la protéine
+      viewer.setStyle({}, { cartoon: { color: 'spectrum' } });
+
+    // Rendu
+        viewer.zoomTo();
+    viewer.render();
+    }
+}, [resultats]);
 
   const analyser = async () => {
   setLoading(true);
@@ -37,7 +68,7 @@ function App() {
 
       {/* Titre */}
       <h1>🧬 StructBind</h1>
-      <p>Protein Binding Site Prediction</p>
+      <p>Prédiction des siites de liaison des protéines et identification des médicaments potentiels</p>
 
       {/* Zone de texte */}
      <textarea
@@ -60,26 +91,50 @@ function App() {
             setSequence(event.target.result);
           };
       reader.readAsText(file);
-    }
-  }}
-/>
+          }
+        }}
+      />
 
-      <button onClick={analyser}>
-      {loading ? 'Analyzing...' : 'Analyze'}
+      <br/><button onClick={analyser}>
+      {loading ? 'Analyzing...' : 'Analiser'}
       </button>
 
-      {resultats && (
-        <div>
-          <h2>Results</h2>
-          {resultats.sites.map((site, index) => (
-            <div key={index}>
-              <h3>Site {index + 1} — {getLabel(site.score)}</h3>
-              <p>Score : {(site.score * 100).toFixed(2)}%</p>
-              <p>Volume : {site.volume} Å³</p>
-              <p>Residues : {site.residus.join(', ')}</p>
-            </div>
-        ))}
+      {resultats && resultats.sites && (
+  <div> 
+  <h2>Résultats</h2>
+  <div className="results-container">
+
+    {/* Panneau gauche — Visualisation 3D */}
+  <div className="viewer-panel">
+    <div
+      id="viewer3d"
+      ref={viewerRef}
+      style={{ width: '100%', height: '100%', position: 'relative' }}
+    />
+  </div>
+
+    {/* Panneau droit — Résultats */}
+    <div className="results-panel">
+      <h2>Sites prédits</h2>
+      {resultats.sites && resultats.sites.map((site, index) => (
+        <div key={index} className= "site-card" >
+
+          <h3 className={getTitreClass(site.score)}>
+            Site {index + 1} — {getLabel(site.score)}
+          </h3>
+          <p className="score">
+            Score : {(site.score * 100).toFixed(2)}%
+          </p>
+          <p>Volume : {site.volume} Å³</p>
+          <p className="residus">
+              Residues : {site.residus.join(', ')}
+            </p>
         </div>
+      ))}
+    </div>
+
+  </div>
+  </div>
 )}
 
     </div>
