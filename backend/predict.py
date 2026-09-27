@@ -119,7 +119,8 @@ class Predictor:
             resultats.append({
                         'score'   : round(score, 3),
                         'residus' : site['residues'],
-                        'volume'  : site.get('volume', 0)
+                        'volume'  : site.get('volume', 0),
+                        'features' : features
                         })
         resultats.sort(key=lambda x: x['score'], reverse=True)
         return {
