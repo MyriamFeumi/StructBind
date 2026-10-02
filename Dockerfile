@@ -1,10 +1,18 @@
 FROM python:3.11-slim
 
 RUN apt-get update && apt-get install -y \
-    fpocket \
+    git \
+    make \
     gcc \
     g++ \
+    libnetcdf-dev \
     && rm -rf /var/lib/apt/lists/*
+
+RUN git clone https://github.com/Discngine/fpocket.git /tmp/fpocket \
+    && cd /tmp/fpocket \
+    && make \
+    && make install \
+    && rm -rf /tmp/fpocket
 
 WORKDIR /app
 
