@@ -10,7 +10,7 @@ RUN apt-get update && apt-get install -y \
 
 RUN git clone https://github.com/Discngine/fpocket.git /tmp/fpocket \
     && cd /tmp/fpocket \
-    && make \
+   && make CFLAGS="-Wno-error=incompatible-pointer-types" \
     && make install \
     && rm -rf /tmp/fpocket
 
