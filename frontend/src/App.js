@@ -4,6 +4,9 @@ import { useEffect, useRef } from 'react';
 import jsPDF from 'jspdf';
 import autoTable from 'jspdf-autotable';
 
+const API_URL = process.env.REACT_APP_API_URL || 'https://structbind.onrender.com';
+
+
 function App() {
   const [sequence, setSequence]   = useState('');
   const [resultats, setResultats] = useState(null);
@@ -52,7 +55,7 @@ function App() {
     try {
       setEtape('🔬 ESMFold — Prédiction structure 3D...')
 
-      const response = await fetch('http://127.0.0.1:8000/predict', {
+      const response = await fetch(`${API_URL}/predict`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({ sequence: sequence })
@@ -66,23 +69,14 @@ function App() {
 
       setResultats(data);
 
-      try {
-        setEtape('🔍 BLAST — Identification protéine...');
-
-        const identResponse = await fetch(
-          'http://127.0.0.1:8000/identify',
-          {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json' },
-            body: JSON.stringify({ sequence: sequence })
-          }
-        );
-        const identData = await identResponse.json();
-        setNomProteine(identData.nom);
-      } catch {
-        setNomProteine('Protéine inconnue');
-      }
-
+      fetch(`${API_URL}/identify`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ sequence: sequence })
+      })
+        .then(r => r.json())
+        .then(d => { if (d.nom) setNomProteine(d.nom); })
+        .catch(() => setNomProteine('Protéine inconnue'));
     } catch (error) {
       console.error('Erreur:', error);
     }
