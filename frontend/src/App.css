@@ -152,7 +152,7 @@ button:hover {
 
 .site-card p {
   color: #000000;
-  font-size: 1.5rem;
+  font-size: 1rem;
 }
 
 /* TABLEAU DES SITES */
@@ -169,7 +169,7 @@ button:hover {
   padding: 10px;
   border: 1px solid #9e9e9e;
   text-align: left;
-  font-size: 1.5rem;
+  font-size: 1rem;
 }
 
 .sites-table td {
@@ -179,7 +179,7 @@ button:hover {
 
 .sites-table td:not(:first-child) {
   color: #000000;
-  font-size: 1.3rem;
+  font-size: 1rem;
 }
 
 .sites-table tr:hover {
