@@ -97,7 +97,7 @@ button:hover {
 .viewer-panel {
   width: 100%;
   height: 500px;
-  max-width: 800px;
+  max-width: 600px;
   background-color: #16213e;
   border: 1px solid #4fc3f7;
   border-radius: 10px;
