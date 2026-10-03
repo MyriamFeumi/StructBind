@@ -141,7 +141,7 @@ button:hover {
 .titre-bon,
 .titre-possible,
 .titre-fausse {
-  font-size: 1.5rem;
+  font-size: 1rem;
 }
 
 .titre-principal { color: #086036; }
@@ -169,7 +169,7 @@ button:hover {
   padding: 10px;
   border: 1px solid #9e9e9e;
   text-align: left;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 
 .sites-table td {
@@ -179,7 +179,7 @@ button:hover {
 
 .sites-table td:not(:first-child) {
   color: #000000;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 
 .sites-table tr:hover {
@@ -223,7 +223,7 @@ button:hover {
   right: 10px;
   background: none;
   border: none;
-  font-size: 1.5rem;
+  font-size: 0.7rem;
   cursor: pointer;
   color: #333;
 }
@@ -237,7 +237,7 @@ button:hover {
   padding: 8px;
   border-bottom: 1px solid #ddd;
   color: #333;
-  font-size: 0.7rem;
+  font-size: 0.8rem;
 }
 
 .details-table td:first-child {
