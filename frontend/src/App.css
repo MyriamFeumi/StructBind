@@ -179,7 +179,7 @@ button:hover {
 
 .sites-table td:not(:first-child) {
   color: #000000;
-  font-size: 1rem;
+  font-size: 0.7rem;
 }
 
 .sites-table tr:hover {
@@ -237,7 +237,7 @@ button:hover {
   padding: 8px;
   border-bottom: 1px solid #ddd;
   color: #333;
-  font-size: 1.3rem;
+  font-size: 0.7rem;
 }
 
 .details-table td:first-child {
