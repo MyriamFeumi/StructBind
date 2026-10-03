@@ -84,6 +84,7 @@ button:hover {
 /* RÉSULTATS — CONTENEUR PRINCIPAL */
 .results-container {
   display: flex;
+  flex-direction: column;
   gap: 60px;
   margin-top: 20px;
   align-items: flex-start;
@@ -98,7 +99,7 @@ button:hover {
   background-color: #16213e;
   border: 1px solid #4fc3f7;
   border-radius: 10px;
-  height: 500px;
+  height: 600px;
   position: relative;
   overflow: hidden;
   display: flex;

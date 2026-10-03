@@ -6,7 +6,6 @@ import autoTable from 'jspdf-autotable';
 
 const API_URL = process.env.REACT_APP_API_URL || 'https://structbind.onrender.com';
 
-
 function App() {
   const [sequence, setSequence]   = useState('');
   const [resultats, setResultats] = useState(null);
@@ -34,7 +33,7 @@ function App() {
   };
 
   useEffect(() => {
-    if (resultats && viewerRef.current) {
+    if (resultats && resultats.pdb_content && viewerRef.current) {
       viewerRef.current.innerHTML = '';
       const viewer = window.$3Dmol.createViewer(
         viewerRef.current,
@@ -49,11 +48,11 @@ function App() {
 
   const analyser = async () => {
     setLoading(true);
-    setResultats(null);   
-    setNomProteine('');    
-    setSelectedSite(null); 
+    setResultats(null);
+    setNomProteine('');
+    setSelectedSite(null);
     try {
-      setEtape('🔬 ESMFold — Prédiction structure 3D...')
+      setEtape('🔬 ESMFold — Prédiction structure 3D...');
 
       const response = await fetch(`${API_URL}/predict`, {
         method: 'POST',
@@ -62,11 +61,8 @@ function App() {
       });
 
       setEtape('🧬 fpocket — Détection des cavités...');
-
       const data = await response.json();
-
       setEtape('🤖 XGBoost — Scoring des sites...');
-
       setResultats(data);
 
       fetch(`${API_URL}/identify`, {
@@ -77,6 +73,7 @@ function App() {
         .then(r => r.json())
         .then(d => { if (d.nom) setNomProteine(d.nom); })
         .catch(() => setNomProteine('Protéine inconnue'));
+
     } catch (error) {
       console.error('Erreur:', error);
     }
@@ -85,22 +82,15 @@ function App() {
 
   const telechargerPDF = () => {
     const doc = new jsPDF();
-
-    // Titre
     doc.setFontSize(12);
     doc.setTextColor(31, 78, 121);
     doc.text('StructBind — Rapport d\'analyse', 20, 20);
-
-    // Infos protéine
     doc.setFontSize(12);
     doc.setTextColor(0, 0, 0);
     doc.text(`Protéine : ${nomProteine}`, 20, 30);
     doc.text(`Date : ${new Date().toLocaleDateString()}`, 20, 38);
-
-    // Ligne de séparation
     doc.line(20, 42, 190, 42);
 
-    // Tableau des sites
     const rows = resultats.sites.map((site, index) => [
       `Site ${index + 1} — ${getLabel(site.score)}`,
       `${(site.score * 100).toFixed(2)}%`,
@@ -115,16 +105,8 @@ function App() {
       startY: 48,
       head: [['Site', 'Score', 'Volume', 'Résidus', 'Hydropho.', 'Charge', 'SASA']],
       body: rows,
-      styles: {
-        fontSize: 8,
-        cellPadding: 3,
-        fillColor: false 
-      },
-      headStyles: {
-        fillColor: [31, 78, 121],
-        textColor: 255,
-        fontStyle: 'bold',
-      },
+      styles: { fontSize: 8, cellPadding: 3, fillColor: false },
+      headStyles: { fillColor: [31, 78, 121], textColor: 255, fontStyle: 'bold' },
     });
 
     doc.save('StructBind_rapport.pdf');
@@ -132,20 +114,15 @@ function App() {
 
   const telechargerPDFSite = (site, index) => {
     const doc = new jsPDF();
-
-    // Titre
     doc.setFontSize(14);
     doc.setTextColor(31, 78, 121);
     doc.text(`StructBind — Site ${index + 1} — ${getLabel(site.score)}`, 20, 20);
-
-    // Infos
     doc.setFontSize(10);
     doc.setTextColor(0, 0, 0);
     doc.text(`Protéine : ${nomProteine}`, 20, 30);
     doc.text(`Date : ${new Date().toLocaleDateString()}`, 20, 38);
     doc.line(20, 42, 190, 42);
 
-    // Tableau features
     if (site.features) {
       const rows = Object.entries(site.features)
         .filter(([key]) => key !== 'composition')
@@ -159,12 +136,7 @@ function App() {
         head: [['Features', 'Valeurs']],
         body: rows,
         styles: { fontSize: 9, cellPadding: 3, fillColor: false },
-        headStyles: {
-          fillColor: [31, 78, 121],
-          textColor: 255,
-          fontStyle: 'bold',
-        },
-        
+        headStyles: { fillColor: [31, 78, 121], textColor: 255, fontStyle: 'bold' },
         columnStyles: {
           0: { fontStyle: 'bold', cellWidth: 80 },
           1: { cellWidth: 60 }
@@ -175,7 +147,6 @@ function App() {
     doc.save(`StructBind_site_${index + 1}.pdf`);
   };
 
-// Identifier les résidus sur la structure 3D
   const getCouleurSite = (score) => {
     if (score >= 0.90) return '#086036';
     if (score >= 0.80) return '#337c34';
@@ -186,39 +157,16 @@ function App() {
 
   const visualiserSite = (site) => {
     if (!viewerRef.current) return;
-  
     setSiteVisualise(site);
-  
-    // Extraire les numéros des résidus
-    const numerosResidus = site.residus.map(r => 
-      parseInt(r.replace(/[A-Z]/g, ''))
-    );
-  
-    // Couleur selon le score
+    const numerosResidus = site.residus.map(r => parseInt(r.replace(/[A-Z]/g, '')));
     const couleur = getCouleurSite(site.score);
-  
-    // Réinitialiser la structure en gris
-    const viewer = window.$3Dmol.createViewer(
-      viewerRef.current,
-      { backgroundColor: '#16213e' }
-    );
-  
+    const viewer = window.$3Dmol.createViewer(viewerRef.current, { backgroundColor: '#16213e' });
     viewer.addModel(resultats.pdb_content, 'pdb');
-  
-    // Protéine entière en gris
-    viewer.setStyle({}, { 
-      cartoon: { color: 'grey' } 
-    });
-  
-    // Résidus du site colorés
+    viewer.setStyle({}, { cartoon: { color: 'grey' } });
     viewer.setStyle(
       { resi: numerosResidus },
-      { 
-        cartoon: { color: couleur },
-        stick: { color: couleur }
-      }
+      { cartoon: { color: couleur }, stick: { color: couleur } }
     );
-  
     viewer.zoomTo({ resi: numerosResidus });
     viewer.render();
   };
@@ -236,16 +184,14 @@ function App() {
 
       <p>── OU ──</p>
 
-      <input 
-        type="file" 
+      <input
+        type="file"
         accept=".fasta,.fa,.txt"
         onChange={(e) => {
           const file = e.target.files[0];
           if (file) {
             const reader = new FileReader();
-            reader.onload = (event) => {
-              setSequence(event.target.result);
-            };
+            reader.onload = (event) => { setSequence(event.target.result); };
             reader.readAsText(file);
           }
         }}
@@ -264,121 +210,115 @@ function App() {
       {resultats && (
         <div>
           <h2>Résultats</h2>
-          {(!resultats.sites || resultats.sites.length === 0) && (
-          <p>Aucun site de liaison prédit pour cette protéine.</p>
-          )}
-          <p className="protein-title">
-            {nomProteine}<br/><br/><strong>Structure 3D</strong>
-            <button
-              className="reset-btn"
-              onClick={() => {
-              const viewer = window.$3Dmol.createViewer(
-              viewerRef.current,
-              { backgroundColor: '#16213e' }
-              );
-              viewer.addModel(resultats.pdb_content, 'pdb');
-              viewer.setStyle({}, { cartoon: { color: 'spectrum' } });
-              viewer.zoomTo();
-              viewer.render();
-              setSiteVisualise(null);
-              }}
-            >
-               → reinitialiser structure
-            </button>
-          </p>
 
-          <div className="results-container"> 
-            <div className="viewer-panel">
-              <div
-                id="viewer3d"
-                ref={viewerRef}
-                style={{ width: '100%', height: '90%', position: 'relative' }}
-              />
-            </div>
-
-            <div className="results-panel">
-              <h2>Sites prédits
-                <button 
-                  className="pdf-btn"
-                  onClick={telechargerPDF}
+          {resultats.pdb_content ? (
+            <>
+              <p className="protein-title">
+                {nomProteine}<br/><br/><strong>Structure 3D</strong>
+                <button
+                  className="reset-btn"
+                  onClick={() => {
+                    const viewer = window.$3Dmol.createViewer(viewerRef.current, { backgroundColor: '#16213e' });
+                    viewer.addModel(resultats.pdb_content, 'pdb');
+                    viewer.setStyle({}, { cartoon: { color: 'spectrum' } });
+                    viewer.zoomTo();
+                    viewer.render();
+                    setSiteVisualise(null);
+                  }}
                 >
-                  📄 Télécharger le rapport PDF
+                  → reinitialiser structure
                 </button>
-              </h2>
-              <table className="sites-table">
-                <thead>
-                  <tr>
-                    <th>Site</th>
-                    <th>Score</th>
-                    <th>Volume</th>
-                    <th>Résidus</th>
-                    <th>Détails</th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {resultats.sites.map((site, index) => (
-                    <tr key={index}>
-                      <td className={getTitreClass(site.score)}
-                        onClick={() => visualiserSite(site)}
-                        style={{ cursor: 'pointer' }}
-                        title="Cliquez pour visualiser le site"
-                      >
-                        Site {index + 1} — {getLabel(site.score)}
-                      </td>
-                      <td>{(site.score * 100).toFixed(2)}%</td>
-                      <td>{site.volume} Å³</td>
-                      <td>{site.residus.slice(0, 3).join(', ')}...</td>
-                      <td>
-                        <button onClick={() => setSelectedSite(site)}>
-                           View
-                        </button>
-                      </td>
-                    </tr>
-                  ))}
-                </tbody>
-              </table>
-              {selectedSite && (
-                <div className="popup-overlay" onClick={() => setSelectedSite(null)}>
-                  <div className="popup" onClick={(e) => e.stopPropagation()}>
+              </p>
 
-                    <button 
-                        className="pdf-btn"
-                        onClick={() => telechargerPDFSite(selectedSite, 
-                          resultats.sites.indexOf(selectedSite)
-                        )}
-                    >
-                        ⬇️ Télécharger
-                    </button>
-      
-                    <h3>Détails du site</h3>
-      
-                    <button className="close-btn" onClick={() => setSelectedSite(null)}>
-                      ✕
-                    </button>
-
-                    <table className="details-table">
-                      <tbody>
-                        <tr><td>Score</td><td>{(selectedSite.score * 100).toFixed(2)}%</td></tr>
-                        <tr><td>Volume</td><td>{selectedSite.volume} Å³</td></tr>
-                        <tr><td>Résidus</td><td>{selectedSite.residus.join(', ')}</td></tr>
-                          {selectedSite.features && Object.entries(selectedSite.features)
-                          .filter(([key]) => key !== 'composition')
-                          .map(([key, value]) => (
-                            <tr key={key}>
-                              <td>{key}</td>
-                              <td>{typeof value === 'number' ? value.toFixed(3) : value}</td>
-                              </tr>
-                          ))
-                          }
-                      </tbody>
-                    </table>
-
-                  </div>
+              <div className="results-container">
+                <div className="viewer-panel">
+                  <div
+                    id="viewer3d"
+                    ref={viewerRef}
+                    style={{ width: '100%', height: '500px', position: 'relative' }}
+                  />
                 </div>
-              )}
-            </div>
 
-          </div>
+                <div className="results-panel">
+                  {(!resultats.sites || resultats.sites.length === 0) ? (
+                    <p>Aucun site de liaison prédit pour cette protéine.</p>
+                  ) : (
+                    <>
+                      <h2>Sites prédits
+                        <button className="pdf-btn" onClick={telechargerPDF}>
+                          📄 Télécharger le rapport PDF
+                        </button>
+                      </h2>
+                      <table className="sites-table">
+                        <thead>
+                          <tr>
+                            <th>Site</th>
+                            <th>Score</th>
+                            <th>Volume</th>
+                            <th>Résidus</th>
+                            <th>Détails</th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {resultats.sites.map((site, index) => (
+                            <tr key={index}>
+                              <td
+                                className={getTitreClass(site.score)}
+                                onClick={() => visualiserSite(site)}
+                                style={{ cursor: 'pointer' }}
+                                title="Cliquez pour visualiser le site"
+                              >
+                                Site {index + 1} — {getLabel(site.score)}
+                              </td>
+                              <td>{(site.score * 100).toFixed(2)}%</td>
+                              <td>{site.volume} Å³</td>
+                              <td>{site.residus.slice(0, 3).join(', ')}...</td>
+                              <td>
+                                <button onClick={() => setSelectedSite(site)}>View</button>
+                              </td>
+                            </tr>
+                          ))}
+                        </tbody>
+                      </table>
+
+                      {selectedSite && (
+                        <div className="popup-overlay" onClick={() => setSelectedSite(null)}>
+                          <div className="popup" onClick={(e) => e.stopPropagation()}>
+                            <button
+                              className="pdf-btn"
+                              onClick={() => telechargerPDFSite(selectedSite, resultats.sites.indexOf(selectedSite))}
+                            >
+                              ⬇️ Télécharger
+                            </button>
+                            <h3>Détails du site</h3>
+                            <button className="close-btn" onClick={() => setSelectedSite(null)}>✕</button>
+                            <table className="details-table">
+                              <tbody>
+                                <tr><td>Score</td><td>{(selectedSite.score * 100).toFixed(2)}%</td></tr>
+                                <tr><td>Volume</td><td>{selectedSite.volume} Å³</td></tr>
+                                <tr><td>Résidus</td><td>{selectedSite.residus.join(', ')}</td></tr>
+                                {selectedSite.features && Object.entries(selectedSite.features)
+                                  .filter(([key]) => key !== 'composition')
+                                  .map(([key, value]) => (
+                                    <tr key={key}>
+                                      <td>{key}</td>
+                                      <td>{typeof value === 'number' ? value.toFixed(3) : value}</td>
+                                    </tr>
+                                  ))
+                                }
+                              </tbody>
+                            </table>
+                          </div>
+                        </div>
+                      )}
+                    </>
+                  )}
+                </div>
+              </div>
+            </>
+          ) : (
+            <p>⚠️ La structure 3D n'a pas pu être prédite pour cette séquence.</p>
+          )}
         </div>
       )}
     </div>
