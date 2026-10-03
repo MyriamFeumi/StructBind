@@ -88,7 +88,7 @@ button:hover {
   gap: 60px;
   margin-top: 20px;
   align-items: flex-start;
-  text-align: left;
+  text-align: center;
   justify-content: flex-start;
 }
 
@@ -112,7 +112,7 @@ button:hover {
 .protein-name {
   color: #000000;
   font-weight: bold;
-  text-align: left;
+  text-align: center;
   margin: 10px 0;
   font-size: 1.5rem;
 }
@@ -132,7 +132,7 @@ button:hover {
 }
 
 .protein-title {
-  text-align: left;
+  text-align: center;
   font-size: 2rem;
 }
 
