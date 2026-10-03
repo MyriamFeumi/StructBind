@@ -15,7 +15,7 @@ function App() {
   const viewerRef = useRef(null);
   const [selectedSite, setSelectedSite] = useState(null);
   const [etape, setEtape] = useState('');
-  const [siteVisualise, setSiteVisualise] = useState(null);
+  const [, setSiteVisualise] = useState(null);
 
   const getTitreClass = (score) => {
     if (score >= 0.90) return "titre-principal";
