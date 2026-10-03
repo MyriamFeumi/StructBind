@@ -235,7 +235,7 @@ function App() {
                   <div
                     id="viewer3d"
                     ref={viewerRef}
-                    style={{ width: '100%', height: '300px', position: 'relative' }}
+                    style={{ width: '100%', height: '500px', position: 'relative' }}
                   />
                 </div>
 
