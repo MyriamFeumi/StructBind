@@ -87,7 +87,7 @@ button:hover {
   flex-direction: column;
   gap: 60px;
   margin-top: 20px;
-  align-items: flex-start;
+  align-items: center;
   text-align: center;
   justify-content: flex-start;
 }
