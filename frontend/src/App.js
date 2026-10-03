@@ -261,9 +261,12 @@ function App() {
         </div>
       )}
 
-      {resultats && resultats.sites && (
+      {resultats && (
         <div>
           <h2>Résultats</h2>
+          {(!resultats.sites || resultats.sites.length === 0) && (
+          <p>Aucun site de liaison prédit pour cette protéine.</p>
+          )}
           <p className="protein-title">
             {nomProteine}<br/><br/><strong>Structure 3D</strong>
             <button
