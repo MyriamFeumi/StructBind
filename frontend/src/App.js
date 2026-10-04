@@ -316,9 +316,7 @@ function App() {
                 </div>
               </div>
             </>
-          ) : (
-            <p>⚠️ La structure 3D n'a pas pu être prédite pour cette séquence.</p>
-          )}
+          ) : ""}
         </div>
       )}
     </div>
