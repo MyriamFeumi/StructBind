@@ -16,8 +16,6 @@ function App() {
     analyser,
   } = useAnalyser();
 
-  const [siteVisualise, setSiteVisualise] = useState(null);
-
   const visualiserSite = (site) => {
     if (!viewerRef.current) return;
     setSiteVisualise(site);
