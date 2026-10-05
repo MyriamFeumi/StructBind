@@ -53,7 +53,7 @@ export const useAnalyser = () => {
             fetch(`${API_URL}/identify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sequence:  seqFinale }),
+                body: JSON.stringify({ sequence:  sequence }),
             })
                 .then(r => r.json())
                 .then(d => {
