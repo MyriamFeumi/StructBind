@@ -60,7 +60,7 @@ export const useAnalyser = () => {
                 setNomProteine(d.nom);
                 })
                 .catch(() => {
-                    setNomProteine('Protéine inconnue');
+                    setNomProteine('Protéine non determinée');
                 });
 
         } catch (error) {
