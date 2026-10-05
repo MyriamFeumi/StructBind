@@ -1,10 +1,11 @@
 import sys
 import os
 import requests
+import re
 sys.path.append(os.path.dirname(__file__))
 from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
-from models import PredictRequest, PredictResponse
+from models import PredictRequest, PredictResponse, IdentifyRequest
 from predict import Predictor
 
 app = FastAPI()
@@ -44,8 +45,7 @@ def predict(request: PredictRequest):
     return resultats
 
 @app.post("/identify")
-def identifier_proteine(request: PredictRequest):
-    import re
+def identifier_proteine(request: IdentifyRequest):
     try:
         raw = request.sequence.strip()
         if raw.startswith('>'):
@@ -58,9 +58,8 @@ def identifier_proteine(request: PredictRequest):
             match2 = re.search(r'^>[^\s]+\s+(.+?)(?:\s+\[|$)', header)
             if match2:
                 return {"nom": match2.group(1).strip()}
-        return {"nom": "Protéine inconnue"}
     except Exception:
-        return {"nom": "Protéine inconnue"}
+        return {"nom": "Protéine non identifiée"}
 
 if __name__ == "__main__":
     import uvicorn

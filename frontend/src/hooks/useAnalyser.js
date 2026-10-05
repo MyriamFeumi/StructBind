@@ -53,14 +53,14 @@ export const useAnalyser = () => {
             fetch(`${API_URL}/identify`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({ sequence: sequence }),
+                body: JSON.stringify({ sequence:  seqFinale }),
             })
                 .then(r => r.json())
                 .then(d => {
                 setNomProteine(d.nom);
                 })
                 .catch(() => {
-                    setNomProteine('Protéine non determinée');
+                    setNomProteine('Protéine non identifiée');
                 });
 
         } catch (error) {

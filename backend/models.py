@@ -40,6 +40,9 @@ class PredictRequest(BaseModel):
                 raise ValueError(f"Caractère invalide : {aa}")
 
         return sequenceAA
+
+class IdentifyRequest(BaseModel):
+    sequence: str
     
 class  SiteResult(BaseModel):
     site_id : int
