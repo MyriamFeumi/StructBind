@@ -60,7 +60,7 @@ def identifier_proteine(request: IdentifyRequest):
                 return {"nom": match2.group(1).strip()}
     except Exception:
         return {"nom": "Protéine non identifiée"}
-
+    return {"nom": "Protéine non identifiée"}
 if __name__ == "__main__":
     import uvicorn
     uvicorn.run(
