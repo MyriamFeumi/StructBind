@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>ZINC15 - Verification Required</title>
+    <style>
+        body {
+            background-color: #f5f5f5;
+            font-family: "Helvetica Neue", Helvetica, Arial, sans-serif;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            min-height: 100vh;
+            margin: 0;
+        }
+        .captcha-container {
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 2px 10px rgba(0,0,0,0.1);
+            padding: 40px;
+            max-width: 500px;
+            width: 100%;
+            text-align: center;
+        }
+        .captcha-container h1 {
+            font-size: 28px;
+            margin-bottom: 10px;
+        }
+        .captcha-container p {
+            color: #666;
+            margin-bottom: 25px;
+        }
+        .error-message {
+            color: #a94442;
+            background-color: #f2dede;
+            border: 1px solid #ebccd1;
+            padding: 10px;
+            border-radius: 4px;
+            margin-bottom: 15px;
+        }
+        .pow-widget {
+            border: 1px solid #ddd;
+            border-radius: 4px;
+            padding: 15px 20px;
+            margin-bottom: 20px;
+            text-align: center;
+        }
+        .checkbox-row {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            gap: 10px;
+        }
+        .cb-wrapper {
+            position: relative;
+            width: 24px;
+            height: 24px;
+        }
+        #verify-cb {
+            width: 24px;
+            height: 24px;
+            cursor: pointer;
+            margin: 0;
+        }
+        #verify-cb:disabled {
+            cursor: default;
+        }
+        .cb-wrapper.loading #verify-cb {
+            visibility: hidden;
+        }
+        .spinner {
+            display: none;
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 24px;
+            height: 24px;
+            border: 3px solid #ddd;
+            border-top-color: #337ab7;
+            border-radius: 50%;
+            animation: spin 0.8s linear infinite;
+            box-sizing: border-box;
+        }
+        .cb-wrapper.loading .spinner {
+            display: block;
+        }
+        @keyframes spin {
+            to { transform: rotate(360deg); }
+        }
+        .checkbox-label {
+            font-size: 16px;
+            color: #333;
+            cursor: pointer;
+            user-select: none;
+        }
+        .pow-status {
+            margin-top: 12px;
+            font-size: 14px;
+            color: #888;
+        }
+        .pow-status.verified {
+            color: #3c763d;
+            font-weight: bold;
+        }
+        .pow-status.error {
+            color: #a94442;
+        }
+        #submit-btn {
+            display: block;
+            width: 100%;
+            padding: 12px;
+            font-size: 18px;
+            color: #fff;
+            background-color: #337ab7;
+            border: 1px solid #2e6da4;
+            border-radius: 4px;
+            cursor: pointer;
+        }
+        #submit-btn:hover {
+            background-color: #286090;
+        }
+        #submit-btn:disabled {
+            background-color: #9bc0e0;
+            border-color: #9bc0e0;
+            cursor: default;
+        }
+    </style>
+</head>
+<body>
+    <div class="captcha-container">
+        <h1>ZINC15</h1>
+        <p>Please verify you are human to continue.</p>
+
+        
+
+        <form id="captcha-form" method="POST" action="/captcha/verify">
+            <input type="hidden" name="next" value="http://zinc15.docking.org/substances/subsets/fda.sdf.gz">
+            <input type="hidden" name="captcha" id="captcha-payload" value="">
+            <div class="pow-widget">
+                <div class="checkbox-row">
+                    <div class="cb-wrapper" id="cb-wrapper">
+                        <input type="checkbox" id="verify-cb">
+                        <div class="spinner"></div>
+                    </div>
+                    <label class="checkbox-label" for="verify-cb">I am human</label>
+                </div>
+                <div class="pow-status" id="pow-status"></div>
+            </div>
+            <button type="submit" id="submit-btn" disabled>
+                Continue to ZINC
+            </button>
+        </form>
+    </div>
+
+    <script>
+    // Use browser's native SHA-256 via Web Crypto API
+    var encoder = new TextEncoder();
+
+    function sha256hex(str) {
+        return crypto.subtle.digest('SHA-256', encoder.encode(str)).then(function(buf) {
+            var bytes = new Uint8Array(buf);
+            var hex = '';
+            for (var i = 0; i < bytes.length; i++) {
+                var b = bytes[i].toString(16);
+                hex += b.length === 1 ? '0' + b : b;
+            }
+            return hex;
+        });
+    }
+
+    var challenge = {"maxnumber": 100000, "challenge": "225b82565f35264361ff6dacd3d9f34225faf4ed1339af7de1bded9bb7e6162f", "salt": "83a5e03aa1de41c725212ce112fa53d7", "algorithm": "SHA-256", "signature": "694b23625c90da667d6cfcf9111844e3b7aa720ea1db53a1853676792a3447ee"};
+
+    var verifyCb = document.getElementById('verify-cb');
+    var cbWrapper = document.getElementById('cb-wrapper');
+    var statusEl = document.getElementById('pow-status');
+    var payloadEl = document.getElementById('captcha-payload');
+    var submitBtn = document.getElementById('submit-btn');
+
+    verifyCb.addEventListener('change', function() {
+        if (!verifyCb.checked) return;
+        verifyCb.disabled = true;
+        cbWrapper.className = 'cb-wrapper loading';
+        statusEl.textContent = 'Verifying...';
+        statusEl.className = 'pow-status';
+
+        var salt = challenge.salt;
+        var target = challenge.challenge;
+        var max = challenge.maxnumber || 100000;
+        var n = 0;
+        var batchSize = 500;
+
+        function solveBatch() {
+            var end = Math.min(n + batchSize, max + 1);
+            var promises = [];
+            var startN = n;
+            for (var i = startN; i < end; i++) {
+                promises.push(sha256hex(salt + String(i)));
+            }
+            Promise.all(promises).then(function(hashes) {
+                for (var i = 0; i < hashes.length; i++) {
+                    if (hashes[i] === target) {
+                        var foundN = startN + i;
+                        var solution = {
+                            algorithm: challenge.algorithm,
+                            challenge: challenge.challenge,
+                            number: foundN,
+                            salt: salt,
+                            signature: challenge.signature
+                        };
+                        payloadEl.value = btoa(JSON.stringify(solution));
+                        cbWrapper.className = 'cb-wrapper';
+                        statusEl.textContent = 'Verified';
+                        statusEl.className = 'pow-status verified';
+                        submitBtn.disabled = false;
+                        return;
+                    }
+                }
+                n = end;
+                if (n <= max) {
+                    statusEl.textContent = 'Verifying... (' + Math.round(n / max * 100) + '%)';
+                    setTimeout(solveBatch, 0);
+                } else {
+                    statusEl.textContent = 'Verification failed. Please reload.';
+                    statusEl.className = 'pow-status error';
+                    cbWrapper.className = 'cb-wrapper';
+                    verifyCb.checked = false;
+                    verifyCb.disabled = false;
+                }
+            });
+        }
+        setTimeout(solveBatch, 10);
+    });
+    </script>
+</body>
+</html>

@@ -123,10 +123,13 @@ class Predictor:
                         'features' : features
                         })
         resultats.sort(key=lambda x: x['score'], reverse=True)
+
         return {
                 'pdb_content' : pdb_content,
                 'sites'       : resultats
                 }
+
+
 
 if __name__ == "__main__":
     predictor = Predictor()
