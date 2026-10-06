@@ -2,7 +2,7 @@
 
 Application web de prédiction de structures protéiques et de détection de sites de liaison, développée avec React et FastAPI.
 
-👉 [Accéder à StructBind](https://structbind.vercel.app)
+👉 [Accéder à StructBind](https://struct-bind-7g4a.vercel.app)
 
 ## Fonctionnalités
 
