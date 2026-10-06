@@ -23,17 +23,6 @@ Application web de prédiction de structures protéiques et de détection de sit
 | Déploiement frontend | Vercel |
 | Déploiement backend | Render |
 
-## Utilisation
-
-![Accueil](captures/Accueil.png)
-1. Entrez ou collez une séquence protéique au format FASTA ou en acides aminés bruts
-    ![Sequence fasta](captures/ajout_sequence.png)
-2. Cliquez sur **Analyser**
-3. Visualisez la structure 3D prédite et les sites de liaison détectés
-    ![Structure 3D](captures/structure3d.png)
-4. Consultez les scores de druggabilité pour chaque site 
-    ![Score](captures/sites_score.png)
-
 ## Déploiement local
 
 ### Créer un environnement virtuel
@@ -73,6 +62,17 @@ npm start
 > ```
 > REACT_APP_API_URL=http://localhost:8000
 > ```
+
+## Utilisation
+
+![Accueil](captures/Accueil.png)
+1. Entrez ou collez une séquence protéique au format FASTA ou en acides aminés bruts
+    ![Sequence fasta](captures/ajout_sequence.png)
+2. Cliquez sur **Analyser**
+3. Visualisez la structure 3D prédite et les sites de liaison détectés
+    ![Structure 3D](captures/structure3d.png)
+4. Consultez les scores de druggabilité pour chaque site 
+    ![Score](captures/sites_score.png)
 
 ## Auteure
 
