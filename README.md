@@ -1,65 +1,80 @@
-# StructBind
+# StructBind 🧬
 
-Pipeline de prédiction des sites de liaison des protéines 
-et de criblage virtuel de médicaments à partir d'une séquence FASTA
+Application web de prédiction de structures protéiques et de détection de sites de liaison, développée avec React et FastAPI.
 
-[![Python](https://img.shields.io/badge/Python-3.11-blue)](https://python.org)
-[![License](https://img.shields.io/badge/License-MIT-green)](LICENSE)
-[![AUC](https://img.shields.io/badge/AUC--ROC-0.980-brightgreen)]()
+👉 [Accéder à StructBind](https://structbind.vercel.app)
 
-## Qu'est-ce que StructBind ?
+## Fonctionnalités
 
-StructBind est un pipeline bioinformatique open source qui prédit 
-les sites de liaison des protéines et identifie les médicaments 
-potentiels directement à partir d'une séquence FASTA, en utilisant 
-l'intelligence artificielle.
+- **Prédiction de structure 3D** : modélisation de la structure protéique via ESMFold
+- **Détection de sites de liaison** : identification des poches potentielles avec fpocket
+- **Visualisation 3D interactive** : exploration de la structure dans le navigateur avec 3Dmol.js
+- **Score de druggabilité** : évaluation du potentiel thérapeutique des sites détectés (XGBoost)
 
-## Pipeline
+## Stack technique
 
-Séquence FASTA
-↓
-ESMFold → Structure 3D (.pdb)
-↓
-fpocket → Détection des cavités
-↓
-XGBoost → Score des sites (AUC = 0.980)
-↓
-AutoDock Vina → Criblage virtuel des médicaments
-↓
-Résultats : sites classés + ligands potentiels
-
-
----
-
-## Installation
-
-```bash
-
-# Créer un environnement virtuel
-python3 -m venv venv
-source venv/bin/activate
-
-# Installer les dépendances
-pip install -r requirements.txt
-
-# Installer fpocket
-sudo apt install fpocket
-
-# Installer AutoDock Vina
-sudo apt install autodock-vina
-```
+| Composant | Technologie |
+|-----------|-------------|
+| Frontend | React (Create React App), 3Dmol.js |
+| Backend | FastAPI, Python |
+| Prédiction de structure | ESMFold |
+| Détection de poches | fpocket |
+| Classification | XGBoost |
+| Déploiement frontend | Vercel |
+| Déploiement backend | Render |
 
 ## Utilisation
 
-### Lancer le backend
+Ecran d'accueil:
+    ![alt text](image.png)
+1. Entrez ou collez une séquence protéique au format FASTA ou en acides aminés bruts
+    ![alt text](image-1.png)
+2. Cliquez sur **Analyser**
+3. Visualisez la structure 3D prédite et les sites de liaison détectés
+    ![alt text](image-2.png)
+4. Consultez les scores de druggabilité pour chaque site 
+    ![alt text](image-3.png)
 
+## Déploiement local
+
+### Créer un environnement virtuel
 ```bash
-uvicorn backend.main:app --reload
+python3 -m venv venv
+source venv/bin/activate
 ```
 
-### Lancer le frontend
+# Installer les dépendances
+```bash
+pip install -r requirements.txt
+```
+
+# Installer fpocket
+```bash
+sudo apt install fpocket
+```
+
+### Backend
 
 ```bash
+cd backend
+pip install -r requirements.txt
+uvicorn main:app --reload
+```
+
+### Frontend
+
+```bash
+cd frontend
+npm install
 npm start
 ```
 
+> Le frontend est configuré pour appeler `https://structbind.onrender.com` par défaut.  
+> Pour pointer vers le backend local, créez un fichier `.env` dans `frontend/` :
+> ```
+> REACT_APP_API_URL=http://localhost:8000
+> ```
+
+## Auteure
+
+**Myriam Feumi étudiante en informatique** — [myriamfeumi@gmail.com](mailto:myriamfeumi@gmail.com)
