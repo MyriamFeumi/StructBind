@@ -18,7 +18,6 @@ function App() {
 
   const visualiserSite = (site) => {
     if (!viewerRef.current) return;
-    setSiteVisualise(site);
     const numerosResidus = site.residus.map(r => parseInt(r.replace(/[A-Z]/g, '')));
     const couleur = getCouleurSite(site.score);
     const viewer = window.$3Dmol.createViewer(viewerRef.current, { backgroundColor: '#16213e' });
@@ -38,7 +37,6 @@ function App() {
     viewer.setStyle({}, { cartoon: { color: 'spectrum' } });
     viewer.zoomTo();
     viewer.render();
-    setSiteVisualise(null);
   };
 
   return (
