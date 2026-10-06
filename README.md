@@ -25,15 +25,14 @@ Application web de prédiction de structures protéiques et de détection de sit
 
 ## Utilisation
 
-Ecran d'accueil:
-    ![alt text](image.png)
+![Accueil](captures/Accueil.png)
 1. Entrez ou collez une séquence protéique au format FASTA ou en acides aminés bruts
-    ![alt text](image-1.png)
+    ![Sequence fasta](captures/ajout_sequence.png)
 2. Cliquez sur **Analyser**
 3. Visualisez la structure 3D prédite et les sites de liaison détectés
-    ![alt text](image-2.png)
+    ![Structure 3D](captures/structure3d.png)
 4. Consultez les scores de druggabilité pour chaque site 
-    ![alt text](image-3.png)
+    ![Score](captures/sites_score.png)
 
 ## Déploiement local
 
@@ -43,12 +42,12 @@ python3 -m venv venv
 source venv/bin/activate
 ```
 
-# Installer les dépendances
+### Installer les dépendances
 ```bash
 pip install -r requirements.txt
 ```
 
-# Installer fpocket
+### Installer fpocket
 ```bash
 sudo apt install fpocket
 ```
@@ -77,4 +76,4 @@ npm start
 
 ## Auteure
 
-**Myriam Feumi étudiante en informatique** — [myriamfeumi@gmail.com](mailto:myriamfeumi@gmail.com)
+**Myriam Feumi étudiante en informatique**
