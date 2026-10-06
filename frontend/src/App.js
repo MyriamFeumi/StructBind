@@ -1,5 +1,4 @@
 import './App.css';
-import { useState } from 'react';
 import { useAnalyser } from './hooks/useAnalyser';
 import { getCouleurSite } from './utils/scores';
 import SitesTable from './components/SitesTable';
